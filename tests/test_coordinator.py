@@ -1,5 +1,6 @@
 """Tests for the GMC-500 coordinator."""
 
+import logging
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
@@ -120,3 +121,70 @@ async def test_forward_to_gmcmap_retries_on_failure():
         with patch("asyncio.sleep", new_callable=AsyncMock):
             await coordinator.forward_to_gmcmap(_valid_data())
     assert mock_session.get.call_count == 3
+
+
+class TestAvailabilityLogging:
+    """Tests for once-only availability change logging."""
+
+    def test_logs_device_online_after_offline(self, caplog):
+        """Coordinator logs INFO when device comes back after being offline."""
+        hass = MagicMock()
+        coordinator = GMCCoordinator(hass)
+        coordinator._availability_state["AID_GID"] = False  # Simulate offline
+
+        with caplog.at_level(logging.INFO, logger="custom_components.gmc500.coordinator"):
+            coordinator.process_data({
+                "AID": "AID", "GID": "GID", "CPM": 10.0,
+                "ACPM": 10.0, "uSV": 0.05,
+            })
+
+        assert any("available" in r.message.lower() for r in caplog.records)
+
+    def test_does_not_log_if_already_online(self, caplog):
+        """Coordinator does not log when device was already online."""
+        hass = MagicMock()
+        coordinator = GMCCoordinator(hass)
+        coordinator._availability_state["AID_GID"] = True  # Already online
+
+        with caplog.at_level(logging.INFO, logger="custom_components.gmc500.coordinator"):
+            coordinator.process_data({
+                "AID": "AID", "GID": "GID", "CPM": 10.0,
+                "ACPM": 10.0, "uSV": 0.05,
+            })
+
+        assert not any("available" in r.message.lower() for r in caplog.records)
+
+    def test_logs_device_offline_on_availability_check(self, caplog):
+        """is_device_available logs INFO when device transitions to offline."""
+        hass = MagicMock()
+        coordinator = GMCCoordinator(hass)
+        coordinator.devices["AID_GID"] = {
+            "last_seen": datetime.now() - timedelta(minutes=20)
+        }
+        coordinator._availability_state["AID_GID"] = True  # Was online
+
+        with caplog.at_level(logging.INFO, logger="custom_components.gmc500.coordinator"):
+            result = coordinator.is_device_available("AID_GID")
+
+        assert result is False
+        assert any(
+            "unavailable" in r.message.lower() or "offline" in r.message.lower()
+            for r in caplog.records
+        )
+
+    def test_does_not_log_offline_repeatedly(self, caplog):
+        """is_device_available does not repeat offline log on subsequent calls."""
+        hass = MagicMock()
+        coordinator = GMCCoordinator(hass)
+        coordinator.devices["AID_GID"] = {
+            "last_seen": datetime.now() - timedelta(minutes=20)
+        }
+        coordinator._availability_state["AID_GID"] = False  # Already logged offline
+
+        with caplog.at_level(logging.INFO, logger="custom_components.gmc500.coordinator"):
+            coordinator.is_device_available("AID_GID")
+
+        assert not any(
+            "unavailable" in r.message.lower() or "offline" in r.message.lower()
+            for r in caplog.records
+        )

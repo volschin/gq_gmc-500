@@ -31,6 +31,7 @@ class GMCCoordinator:
         self._registered_devices: dict[str, str] = {}
         self._ignored_devices: set[str] = set()
         self._listeners: list[callable] = []
+        self._availability_state: dict[str, bool] = {}
 
     def _device_id(self, aid: str, gid: str) -> str:
         """Build a unique device identifier from AID and GID."""
@@ -64,8 +65,17 @@ class GMCCoordinator:
         last_seen = self.devices[device_id].get("last_seen")
         if last_seen is None:
             return False
-        elapsed = (datetime.now() - last_seen).total_seconds()
-        return elapsed <= AVAILABILITY_TIMEOUT
+        available = (datetime.now() - last_seen).total_seconds() <= AVAILABILITY_TIMEOUT
+
+        prev = self._availability_state.get(device_id)
+        if prev is True and not available:
+            _LOGGER.info(
+                "GMC-500 device %s is now unavailable (no data for 15 minutes)",
+                device_id,
+            )
+            self._availability_state[device_id] = False
+
+        return available
 
     def add_listener(self, listener: callable) -> callable:
         """Register a listener called on new data; returns a removal callback."""
@@ -85,8 +95,13 @@ class GMCCoordinator:
         if device_id in self._ignored_devices:
             return
 
+        was_available = self._availability_state.get(device_id)
         data["last_seen"] = datetime.now()
         self.devices[device_id] = data
+
+        if was_available is False:
+            _LOGGER.info("GMC-500 device %s/%s is now available", aid, gid)
+        self._availability_state[device_id] = True
 
         for listener in self._listeners:
             listener(device_id, data)
