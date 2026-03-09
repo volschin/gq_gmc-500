@@ -117,3 +117,61 @@ async def test_server_404_on_unknown_path(gmc_server):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"http://127.0.0.1:{port}/other") as resp:
             assert resp.status == 404
+
+
+@pytest.mark.asyncio
+async def test_server_ignores_invalid_optional_param(unused_tcp_port):
+    """Invalid (non-numeric) optional param is silently skipped, data still delivered."""
+    callback = []
+    server = GMCServer(port=unused_tcp_port, data_callback=lambda data: callback.append(data))
+    await server.start()
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"http://127.0.0.1:{unused_tcp_port}/log2.asp",
+                params={
+                    "AID": "0230111",
+                    "GID": "0034021",
+                    "CPM": "15",
+                    "ACPM": "13.2",
+                    "uSV": "0.075",
+                    "tmp": "notanumber",  # invalid optional param
+                },
+            ) as resp:
+                assert resp.status == 200
+                text = await resp.text()
+                assert text == "OK.ERR0"
+        # Callback is still called; invalid optional param is just omitted
+        assert len(callback) == 1
+        assert "tmp" not in callback[0]
+    finally:
+        await server.stop()
+
+
+@pytest.mark.asyncio
+async def test_server_calls_async_callback(unused_tcp_port):
+    """Server awaits the data callback when it returns a coroutine."""
+    awaited = []
+
+    async def async_callback(data):
+        awaited.append(data)
+
+    server = GMCServer(port=unused_tcp_port, data_callback=async_callback)
+    await server.start()
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"http://127.0.0.1:{unused_tcp_port}/log2.asp",
+                params={
+                    "AID": "0230111",
+                    "GID": "0034021",
+                    "CPM": "15",
+                    "ACPM": "13.2",
+                    "uSV": "0.075",
+                },
+            ) as resp:
+                assert resp.status == 200
+        assert len(awaited) == 1
+        assert awaited[0]["AID"] == "0230111"
+    finally:
+        await server.stop()

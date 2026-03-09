@@ -51,6 +51,7 @@ from custom_components.gmc500 import (  # noqa: E402
     async_setup_entry,
     async_unload_entry,
     async_remove_config_entry_device,
+    _async_update_listener,
 )
 from custom_components.gmc500.const import DOMAIN  # noqa: E402
 
@@ -427,3 +428,24 @@ class TestRemoveDevice:
         result = await async_remove_config_entry_device(hass, entry, device_entry)
 
         assert result is True
+
+
+# ---------------------------------------------------------------------------
+# Tests: _async_update_listener
+# ---------------------------------------------------------------------------
+
+
+class TestAsyncUpdateListener:
+    """Tests for the _async_update_listener callback."""
+
+    @pytest.mark.asyncio
+    async def test_update_listener_reloads_entry(self):
+        """_async_update_listener triggers a config entry reload."""
+        hass = MagicMock()
+        hass.config_entries.async_reload = AsyncMock()
+        entry = MagicMock()
+        entry.entry_id = "test_id"
+
+        await _async_update_listener(hass, entry)
+
+        hass.config_entries.async_reload.assert_awaited_once_with("test_id")

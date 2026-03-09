@@ -188,3 +188,57 @@ class TestAvailabilityLogging:
             "unavailable" in r.message.lower() or "offline" in r.message.lower()
             for r in caplog.records
         )
+
+
+def test_unignore_device_removes_from_ignored():
+    """unignore_device removes a device from the ignored set."""
+    hass = MagicMock()
+    coordinator = GMCCoordinator(hass)
+    coordinator.ignore_device("AID", "GID")
+    assert coordinator.is_device_ignored("AID", "GID")
+    coordinator.unignore_device("AID", "GID")
+    assert not coordinator.is_device_ignored("AID", "GID")
+
+
+def test_unignore_device_is_idempotent():
+    """unignore_device on a non-ignored device does not raise."""
+    hass = MagicMock()
+    coordinator = GMCCoordinator(hass)
+    # Should not raise even if the device was never ignored
+    coordinator.unignore_device("AID", "GID")
+    assert not coordinator.is_device_ignored("AID", "GID")
+
+
+def test_is_device_available_false_when_last_seen_is_none():
+    """is_device_available returns False when device exists but last_seen is None."""
+    hass = MagicMock()
+    coordinator = GMCCoordinator(hass)
+    coordinator.devices["AID_GID"] = {}  # no last_seen key
+    assert not coordinator.is_device_available("AID_GID")
+
+
+@pytest.mark.asyncio
+async def test_forward_to_gmcmap_retries_on_client_error():
+    """forward_to_gmcmap retries on aiohttp.ClientError and logs all attempts."""
+    import aiohttp as _aiohttp
+
+    hass = MagicMock()
+    coordinator = GMCCoordinator(hass)
+
+    # Create a context manager mock whose __aenter__ raises ClientError
+    mock_get_cm = MagicMock()
+    mock_get_cm.__aenter__ = AsyncMock(side_effect=_aiohttp.ClientError("connection failed"))
+    mock_get_cm.__aexit__ = AsyncMock(return_value=False)
+
+    mock_session = MagicMock()
+    mock_session.get = MagicMock(return_value=mock_get_cm)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("aiohttp.ClientSession", return_value=mock_session):
+        with patch("asyncio.sleep", new_callable=AsyncMock):
+            await coordinator.forward_to_gmcmap(_valid_data())
+
+    # Should have tried GMCMAP_MAX_RETRIES (3) times
+    from custom_components.gmc500.const import GMCMAP_MAX_RETRIES
+    assert mock_session.get.call_count == GMCMAP_MAX_RETRIES
