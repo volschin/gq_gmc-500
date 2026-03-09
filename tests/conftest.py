@@ -111,6 +111,10 @@ sys.modules.setdefault("homeassistant.exceptions", _ha_exceptions)
 sys.modules.setdefault("homeassistant.helpers", _ha_helpers)
 sys.modules.setdefault("homeassistant.helpers.entity", _ha_entity)
 sys.modules.setdefault("homeassistant.helpers.entity_platform", MagicMock())
+_ha_device_registry = MagicMock()
+_ha_device_registry.DeviceEntry = MagicMock
+
+sys.modules.setdefault("homeassistant.helpers.device_registry", _ha_device_registry)
 sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 sys.modules.setdefault("homeassistant.components", MagicMock())
 sys.modules.setdefault("homeassistant.components.sensor", _ha_sensor)

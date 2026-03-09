@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 
 from .const import DOMAIN, CONF_PORT, DEFAULT_PORT
@@ -101,6 +102,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool
     if unload_ok:
         await entry.runtime_data.server.stop()
     return unload_ok
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    entry: GMCConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Allow manual removal of a device from the device registry.
+
+    Returns False if the device is still actively sending data.
+    """
+    coordinator = entry.runtime_data.coordinator
+    for identifier in device_entry.identifiers:
+        if identifier[0] == DOMAIN:
+            device_id = identifier[1]
+            return device_id not in coordinator.devices
+    return True
 
 
 async def _async_update_listener(

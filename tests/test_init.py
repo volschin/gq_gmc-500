@@ -36,16 +36,21 @@ _ha_issue_registry = MagicMock()
 _ha_issue_registry.IssueSeverity = MagicMock()
 _ha_issue_registry.IssueSeverity.ERROR = "error"
 
+_ha_device_registry = MagicMock()
+_ha_device_registry.DeviceEntry = MagicMock
+
 sys.modules.setdefault("homeassistant", MagicMock())
 sys.modules.setdefault("homeassistant.config_entries", _ha_config_entries)
 sys.modules.setdefault("homeassistant.const", _ha_const)
 sys.modules.setdefault("homeassistant.core", _ha_core)
 sys.modules.setdefault("homeassistant.exceptions", _ha_exceptions)
+sys.modules.setdefault("homeassistant.helpers.device_registry", _ha_device_registry)
 sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 
 from custom_components.gmc500 import (  # noqa: E402
     async_setup_entry,
     async_unload_entry,
+    async_remove_config_entry_device,
 )
 from custom_components.gmc500.const import DOMAIN  # noqa: E402
 
@@ -362,3 +367,63 @@ class TestSetupFailure:
             await async_setup_entry(hass, entry)
 
         ir.async_delete_issue.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Tests: async_remove_config_entry_device
+# ---------------------------------------------------------------------------
+
+
+class TestRemoveDevice:
+    """Tests for async_remove_config_entry_device."""
+
+    @pytest.mark.asyncio
+    async def test_allows_removal_of_inactive_device(self):
+        """Inactive device (not in coordinator.devices) can be removed."""
+        hass = MagicMock()
+        entry = MagicMock()
+        coordinator = MagicMock()
+        coordinator.devices = {}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
+
+        device_entry = MagicMock()
+        device_entry.identifiers = {("gmc500", "AID1_GID1")}
+
+        result = await async_remove_config_entry_device(hass, entry, device_entry)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_blocks_removal_of_active_device(self):
+        """Active device (present in coordinator.devices) cannot be removed."""
+        hass = MagicMock()
+        entry = MagicMock()
+        coordinator = MagicMock()
+        coordinator.devices = {"AID1_GID1": {"CPM": 15.0}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
+
+        device_entry = MagicMock()
+        device_entry.identifiers = {("gmc500", "AID1_GID1")}
+
+        result = await async_remove_config_entry_device(hass, entry, device_entry)
+
+        assert result is False
+
+    @pytest.mark.asyncio
+    async def test_allows_removal_when_no_domain_identifier(self):
+        """Returns True when device has no gmc500 identifier (safe default)."""
+        hass = MagicMock()
+        entry = MagicMock()
+        coordinator = MagicMock()
+        coordinator.devices = {"AID1_GID1": {"CPM": 15.0}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
+
+        device_entry = MagicMock()
+        device_entry.identifiers = {("other_domain", "some_id")}
+
+        result = await async_remove_config_entry_device(hass, entry, device_entry)
+
+        assert result is True
