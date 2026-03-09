@@ -18,6 +18,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import GMCCoordinator
 
+# Push-based integration — coordinator handles updates, no parallel polling needed
+PARALLEL_UPDATES = 0
+
 
 @dataclass
 class GMCSensorDescription:
