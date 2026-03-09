@@ -1,12 +1,13 @@
 {
   "domain": "gmc500",
   "name": "GQ GMC-500 Radiation Monitor",
-  "codeowners": [],
+  "codeowners": ["@volschin"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/TODO",
+  "documentation": "https://github.com/volschin/gq_gmc-500",
   "integration_type": "hub",
   "iot_class": "local_push",
+  "quality_scale": "gold",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.1.0"
