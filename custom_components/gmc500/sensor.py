@@ -11,13 +11,17 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from typing import TYPE_CHECKING
+
 from .const import DOMAIN
 from .coordinator import GMCCoordinator
+
+if TYPE_CHECKING:
+    from . import GMCConfigEntry
 
 # Push-based integration — coordinator handles updates, no parallel polling needed
 PARALLEL_UPDATES = 0
@@ -150,7 +154,7 @@ class GMCEnvironmentSensor(GMCBaseSensor):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GMCConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up GMC-500 sensors from a config entry."""
@@ -187,4 +191,4 @@ async def async_setup_entry(
 
         async_add_entities(entities)
 
-    coordinator.add_listener(_async_handle_data)
+    entry.async_on_unload(coordinator.add_listener(_async_handle_data))

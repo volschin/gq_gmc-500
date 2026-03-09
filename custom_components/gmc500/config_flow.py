@@ -11,7 +11,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 
-from .const import DOMAIN, DEFAULT_PORT, CONF_PORT, CONF_IGNORED_DEVICES
+from .const import DOMAIN, DEFAULT_PORT, CONF_PORT
 
 _LOGGER = logging.getLogger(__name__)
 

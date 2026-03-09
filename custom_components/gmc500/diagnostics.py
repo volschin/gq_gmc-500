@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 
 from . import GMCConfigEntry
+from .const import CONF_PORT
 
 
 async def async_get_config_entry_diagnostics(
@@ -25,7 +26,7 @@ async def async_get_config_entry_diagnostics(
 
     return {
         "entry": {
-            "port": entry.data.get("port"),
+            "port": entry.data.get(CONF_PORT),
         },
         "devices": devices,
         "registered_devices": list(coordinator._registered_devices.keys()),

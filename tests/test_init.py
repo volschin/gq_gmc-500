@@ -161,7 +161,7 @@ class TestAsyncUnloadEntry:
 
     @pytest.mark.asyncio
     async def test_stops_server_and_removes_data(self):
-        """Unload stops the server and removes entry from hass.data."""
+        """Unload stops the server and cleans up entry runtime_data."""
         hass = _make_hass()
         entry = _make_entry()
         mock_server = AsyncMock()

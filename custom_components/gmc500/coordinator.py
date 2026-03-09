@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -30,7 +31,7 @@ class GMCCoordinator:
         self.devices: dict[str, dict[str, Any]] = {}
         self._registered_devices: dict[str, str] = {}
         self._ignored_devices: set[str] = set()
-        self._listeners: list[callable] = []
+        self._listeners: list[Callable] = []
         self._availability_state: dict[str, bool] = {}
 
     def _device_id(self, aid: str, gid: str) -> str:
@@ -77,7 +78,7 @@ class GMCCoordinator:
 
         return available
 
-    def add_listener(self, listener: callable) -> callable:
+    def add_listener(self, listener: Callable) -> Callable:
         """Register a listener called on new data; returns a removal callback."""
         self._listeners.append(listener)
 
