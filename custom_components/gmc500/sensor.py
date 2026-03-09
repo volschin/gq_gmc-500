@@ -136,7 +136,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up GMC-500 sensors from a config entry."""
-    coordinator: GMCCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: GMCCoordinator = entry.runtime_data.coordinator
     tracked_devices: set[str] = set()
 
     @callback

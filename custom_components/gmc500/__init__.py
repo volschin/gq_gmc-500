@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -18,10 +19,19 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up GMC-500 from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
+@dataclass
+class GMCRuntimeData:
+    """Runtime data for a GMC-500 config entry."""
 
+    coordinator: GMCCoordinator
+    server: GMCServer
+
+
+type GMCConfigEntry = ConfigEntry[GMCRuntimeData]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
+    """Set up GMC-500 from a config entry."""
     coordinator = GMCCoordinator(hass)
     port = entry.data.get(CONF_PORT, DEFAULT_PORT)
 
@@ -53,10 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     server = GMCServer(port=port, data_callback=handle_data)
     await server.start()
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        "coordinator": coordinator,
-        "server": server,
-    }
+    entry.runtime_data = GMCRuntimeData(coordinator=coordinator, server=server)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -67,19 +74,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
     if unload_ok:
-        data = hass.data[DOMAIN].pop(entry.entry_id)
-        await data["server"].stop()
-
+        await entry.runtime_data.server.stop()
     return unload_ok
 
 
 async def _async_update_listener(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: GMCConfigEntry
 ) -> None:
     """Handle options update — restart integration."""
     await hass.config_entries.async_reload(entry.entry_id)

@@ -56,6 +56,7 @@ def _make_entry(entry_id="test_entry_id", port=8080):
     entry.data = {"port": port}
     entry.async_on_unload = MagicMock()
     entry.add_update_listener = MagicMock()
+    entry.runtime_data = None
     return entry
 
 
@@ -87,11 +88,9 @@ class TestAsyncSetupEntry:
 
         assert result is True
         mock_server.start.assert_awaited_once()
-        assert DOMAIN in hass.data
-        assert entry.entry_id in hass.data[DOMAIN]
-        stored = hass.data[DOMAIN][entry.entry_id]
-        assert stored["coordinator"] is mock_coord
-        assert stored["server"] is mock_server
+        assert entry.runtime_data is not None
+        assert entry.runtime_data.coordinator is mock_coord
+        assert entry.runtime_data.server is mock_server
 
     @pytest.mark.asyncio
     async def test_forwards_platforms(self):
@@ -143,18 +142,13 @@ class TestAsyncUnloadEntry:
         hass = _make_hass()
         entry = _make_entry()
         mock_server = AsyncMock()
-        hass.data[DOMAIN] = {
-            entry.entry_id: {
-                "coordinator": MagicMock(),
-                "server": mock_server,
-            }
-        }
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.server = mock_server
 
         result = await async_unload_entry(hass, entry)
 
         assert result is True
         mock_server.stop.assert_awaited_once()
-        assert entry.entry_id not in hass.data[DOMAIN]
 
     @pytest.mark.asyncio
     async def test_does_not_remove_data_on_failed_unload(self):
@@ -163,18 +157,13 @@ class TestAsyncUnloadEntry:
         hass.config_entries.async_unload_platforms = AsyncMock(return_value=False)
         entry = _make_entry()
         mock_server = AsyncMock()
-        hass.data[DOMAIN] = {
-            entry.entry_id: {
-                "coordinator": MagicMock(),
-                "server": mock_server,
-            }
-        }
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.server = mock_server
 
         result = await async_unload_entry(hass, entry)
 
         assert result is False
         mock_server.stop.assert_not_awaited()
-        assert entry.entry_id in hass.data[DOMAIN]
 
 
 # ---------------------------------------------------------------------------

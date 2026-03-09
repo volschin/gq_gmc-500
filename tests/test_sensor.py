@@ -289,8 +289,8 @@ class TestAsyncSetupEntry:
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()
-        entry.entry_id = "test_entry"
-        hass.data = {DOMAIN: {entry.entry_id: {"coordinator": coordinator}}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
 
         added_entities: list = []
         async_add_entities = MagicMock(side_effect=lambda e: added_entities.extend(e))
@@ -314,8 +314,8 @@ class TestAsyncSetupEntry:
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()
-        entry.entry_id = "test_entry"
-        hass.data = {DOMAIN: {entry.entry_id: {"coordinator": coordinator}}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
 
         added_entities: list = []
         async_add_entities = MagicMock(side_effect=lambda e: added_entities.extend(e))
@@ -337,8 +337,8 @@ class TestAsyncSetupEntry:
         # Device is NOT registered
 
         entry = MagicMock()
-        entry.entry_id = "test_entry"
-        hass.data = {DOMAIN: {entry.entry_id: {"coordinator": coordinator}}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
 
         async_add_entities = MagicMock()
 
@@ -356,8 +356,8 @@ class TestAsyncSetupEntry:
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()
-        entry.entry_id = "test_entry"
-        hass.data = {DOMAIN: {entry.entry_id: {"coordinator": coordinator}}}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
 
         async_add_entities = MagicMock()
 
