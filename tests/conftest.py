@@ -67,7 +67,13 @@ _ha_sensor.SensorDeviceClass = MagicMock()
 _ha_sensor.SensorDeviceClass.TEMPERATURE = "temperature"
 _ha_sensor.SensorDeviceClass.HUMIDITY = "humidity"
 _ha_sensor.SensorDeviceClass.ATMOSPHERIC_PRESSURE = "atmospheric_pressure"
-_ha_sensor.SensorEntity = type("SensorEntity", (), {})
+_ha_sensor.SensorEntity = type(
+    "SensorEntity",
+    (),
+    {
+        "async_write_ha_state": MagicMock(),
+    },
+)
 _ha_sensor.SensorStateClass = MagicMock()
 _ha_sensor.SensorStateClass.MEASUREMENT = "measurement"
 

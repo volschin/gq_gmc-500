@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -72,6 +73,7 @@ class GMCBaseSensor(SensorEntity):
 
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
+    _remove_listener: Callable[[], None] | None = None
 
     def __init__(
         self,
@@ -115,6 +117,24 @@ class GMCBaseSensor(SensorEntity):
         if device_data is None:
             return None
         return device_data.get(self._description.key)
+
+    async def async_added_to_hass(self) -> None:
+        """Register coordinator listener when added to Home Assistant."""
+        self._remove_listener = self._coordinator.add_listener(
+            self._handle_coordinator_update
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister coordinator listener when removed from Home Assistant."""
+        if self._remove_listener is not None:
+            self._remove_listener()
+            self._remove_listener = None
+
+    @callback
+    def _handle_coordinator_update(self, device_id: str, data: dict) -> None:
+        """Write HA state when coordinator has new data for this device."""
+        if device_id == self._device_id:
+            self.async_write_ha_state()
 
 
 class GMCRadiationSensor(GMCBaseSensor):

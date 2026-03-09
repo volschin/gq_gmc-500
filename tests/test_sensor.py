@@ -19,7 +19,13 @@ _ha_sensor.SensorDeviceClass = MagicMock()
 _ha_sensor.SensorDeviceClass.TEMPERATURE = "temperature"
 _ha_sensor.SensorDeviceClass.HUMIDITY = "humidity"
 _ha_sensor.SensorDeviceClass.ATMOSPHERIC_PRESSURE = "atmospheric_pressure"
-_ha_sensor.SensorEntity = type("SensorEntity", (), {})
+_ha_sensor.SensorEntity = type(
+    "SensorEntity",
+    (),
+    {
+        "async_write_ha_state": MagicMock(),
+    },
+)
 _ha_sensor.SensorStateClass = MagicMock()
 _ha_sensor.SensorStateClass.MEASUREMENT = "measurement"
 
@@ -367,3 +373,71 @@ class TestAsyncSetupEntry:
         coordinator.process_data(_valid_data())
 
         assert async_add_entities.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Tests: Entity lifecycle (async_added_to_hass / async_will_remove_from_hass)
+# ---------------------------------------------------------------------------
+
+class TestEntityLifecycle:
+    """Tests for async_added_to_hass and async_will_remove_from_hass."""
+
+    @pytest.mark.asyncio
+    async def test_async_added_to_hass_registers_listener(self):
+        """async_added_to_hass registers a coordinator listener."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        initial_count = len(coordinator._listeners)
+
+        await sensor.async_added_to_hass()
+
+        assert len(coordinator._listeners) == initial_count + 1
+
+    @pytest.mark.asyncio
+    async def test_async_will_remove_from_hass_removes_listener(self):
+        """async_will_remove_from_hass unregisters the coordinator listener."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        await sensor.async_added_to_hass()
+        count_after_add = len(coordinator._listeners)
+
+        await sensor.async_will_remove_from_hass()
+
+        assert len(coordinator._listeners) == count_after_add - 1
+
+    def test_coordinator_update_calls_write_ha_state(self):
+        """Coordinator data triggers async_write_ha_state on the matching sensor."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        sensor.async_write_ha_state = MagicMock()
+
+        # Simulate what async_added_to_hass does: register listener
+        coordinator.add_listener(sensor._handle_coordinator_update)
+
+        coordinator.process_data(_valid_data())
+
+        sensor.async_write_ha_state.assert_called_once()
+
+    def test_coordinator_update_ignores_other_device(self):
+        """Coordinator data for a different device does NOT trigger write_ha_state."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        sensor.async_write_ha_state = MagicMock()
+
+        coordinator.add_listener(sensor._handle_coordinator_update)
+
+        other_data = {
+            "AID": "9999999", "GID": "8888888", "CPM": 99.0,
+            "ACPM": 99.0, "uSV": 0.5,
+        }
+        coordinator.process_data(other_data)
+
+        sensor.async_write_ha_state.assert_not_called()
