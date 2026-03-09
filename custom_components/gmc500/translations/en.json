@@ -17,13 +17,21 @@
         "data": {
           "name": "Device Name"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure GQ GMC-500",
+        "description": "Update the HTTP server port.",
+        "data": {
+          "port": "HTTP Server Port"
+        }
       }
     },
     "error": {
       "port_in_use": "Port is already in use"
     },
     "abort": {
-      "already_configured": "This device is already configured"
+      "already_configured": "This device is already configured",
+      "reconfigure_successful": "Re-configuration was successful"
     }
   },
   "options": {

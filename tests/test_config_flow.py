@@ -35,6 +35,12 @@ class _MockConfigFlow:
     def _abort_if_unique_id_configured(self):
         pass
 
+    def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
+        return {"type": "abort", "reason": "reconfigure_successful"}
+
+    def _get_reconfigure_entry(self):
+        return self._reconfigure_entry if hasattr(self, "_reconfigure_entry") else MagicMock()
+
 
 class _MockOptionsFlow:
     """Mock OptionsFlow base class."""
@@ -266,3 +272,56 @@ class TestGetOptionsFlow:
         result = GMC500ConfigFlow.async_get_options_flow(config_entry)
         assert isinstance(result, GMC500OptionsFlow)
         assert result.config_entry is config_entry
+
+
+# ---------------------------------------------------------------------------
+# Tests: GMC500ConfigFlow — reconfigure step
+# ---------------------------------------------------------------------------
+
+
+class TestReconfigureFlow:
+    """Tests for async_step_reconfigure."""
+
+    @pytest.mark.asyncio
+    async def test_reconfigure_shows_form_with_current_port(self):
+        """Reconfigure step shows a form pre-filled with current port."""
+        flow = GMC500ConfigFlow()
+        flow.hass = MagicMock()
+        entry = MagicMock()
+        entry.data = {CONF_PORT: 8080}
+        flow._reconfigure_entry = entry
+
+        result = await flow.async_step_reconfigure(None)
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "reconfigure"
+
+    @pytest.mark.asyncio
+    async def test_reconfigure_updates_port_on_valid_input(self):
+        """Reconfigure with a free port calls async_update_reload_and_abort."""
+        flow = GMC500ConfigFlow()
+        flow.hass = MagicMock()
+        flow.hass.async_add_executor_job = AsyncMock(return_value=True)
+        entry = MagicMock()
+        entry.data = {CONF_PORT: 8080}
+        flow._reconfigure_entry = entry
+
+        result = await flow.async_step_reconfigure({CONF_PORT: 9090})
+
+        assert result["type"] == "abort"
+        assert result["reason"] == "reconfigure_successful"
+
+    @pytest.mark.asyncio
+    async def test_reconfigure_rejects_port_in_use(self):
+        """Reconfigure shows error when new port is already in use."""
+        flow = GMC500ConfigFlow()
+        flow.hass = MagicMock()
+        flow.hass.async_add_executor_job = AsyncMock(return_value=False)
+        entry = MagicMock()
+        entry.data = {CONF_PORT: 8080}
+        flow._reconfigure_entry = entry
+
+        result = await flow.async_step_reconfigure({CONF_PORT: 9999})
+
+        assert result["type"] == "form"
+        assert result["errors"][CONF_PORT] == "port_in_use"
