@@ -38,5 +38,16 @@
     "error": {
       "port_in_use": "Port is already in use"
     }
+  },
+  "issues": {
+    "port_in_use": {
+      "title": "Port {port} is in use",
+      "description": "The HTTP port {port} configured for GMC-500 is already in use. Change the port in the integration options."
+    }
+  },
+  "exceptions": {
+    "port_unavailable": {
+      "message": "Cannot start HTTP server on port {port}: port is already in use."
+    }
   }
 }

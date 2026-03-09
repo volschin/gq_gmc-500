@@ -21,10 +21,27 @@ _ha_const.Platform.SENSOR = "sensor"
 _ha_core = MagicMock()
 _ha_core.HomeAssistant = MagicMock
 
+class _ConfigEntryNotReady(Exception):
+    def __init__(self, *args, translation_domain=None, translation_key=None,
+                 translation_placeholders=None, **kwargs):
+        super().__init__(*args)
+        self.translation_domain = translation_domain
+        self.translation_key = translation_key
+        self.translation_placeholders = translation_placeholders
+
+_ha_exceptions = MagicMock()
+_ha_exceptions.ConfigEntryNotReady = _ConfigEntryNotReady
+
+_ha_issue_registry = MagicMock()
+_ha_issue_registry.IssueSeverity = MagicMock()
+_ha_issue_registry.IssueSeverity.ERROR = "error"
+
 sys.modules.setdefault("homeassistant", MagicMock())
 sys.modules.setdefault("homeassistant.config_entries", _ha_config_entries)
 sys.modules.setdefault("homeassistant.const", _ha_const)
 sys.modules.setdefault("homeassistant.core", _ha_core)
+sys.modules.setdefault("homeassistant.exceptions", _ha_exceptions)
+sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 
 from custom_components.gmc500 import (  # noqa: E402
     async_setup_entry,
@@ -278,3 +295,70 @@ class TestHandleDataCallback:
         await data_callback(test_data)
 
         mock_coord.process_data.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Tests: setup failure handling
+# ---------------------------------------------------------------------------
+
+
+class TestSetupFailure:
+    """Tests for setup failure handling."""
+
+    @pytest.mark.asyncio
+    async def test_raises_config_entry_not_ready_when_server_fails(self):
+        """Setup raises ConfigEntryNotReady when server cannot bind to port."""
+        import sys
+        ConfigEntryNotReady = sys.modules["homeassistant.exceptions"].ConfigEntryNotReady
+
+        hass = _make_hass()
+        entry = _make_entry(port=9999)
+
+        with patch("custom_components.gmc500.GMCServer") as mock_server_cls, \
+             patch("custom_components.gmc500.GMCCoordinator"):
+            mock_server = AsyncMock()
+            mock_server.start.side_effect = OSError("Address already in use")
+            mock_server_cls.return_value = mock_server
+
+            with pytest.raises(ConfigEntryNotReady):
+                await async_setup_entry(hass, entry)
+
+    @pytest.mark.asyncio
+    async def test_creates_repair_issue_when_server_fails(self):
+        """Setup creates a repair issue when server cannot bind."""
+        import sys
+        ir = sys.modules["homeassistant.helpers.issue_registry"]
+        ir.async_create_issue.reset_mock()
+
+        hass = _make_hass()
+        entry = _make_entry(port=9999)
+
+        with patch("custom_components.gmc500.GMCServer") as mock_server_cls, \
+             patch("custom_components.gmc500.GMCCoordinator"):
+            mock_server = AsyncMock()
+            mock_server.start.side_effect = OSError("Address already in use")
+            mock_server_cls.return_value = mock_server
+
+            try:
+                await async_setup_entry(hass, entry)
+            except Exception:
+                pass
+
+        ir.async_create_issue.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_clears_repair_issue_on_successful_setup(self):
+        """Successful setup deletes any lingering repair issue."""
+        import sys
+        ir = sys.modules["homeassistant.helpers.issue_registry"]
+        ir.async_delete_issue.reset_mock()
+
+        hass = _make_hass()
+        entry = _make_entry()
+
+        with patch("custom_components.gmc500.GMCServer") as mock_server_cls, \
+             patch("custom_components.gmc500.GMCCoordinator"):
+            mock_server_cls.return_value = AsyncMock()
+            await async_setup_entry(hass, entry)
+
+        ir.async_delete_issue.assert_called_once()

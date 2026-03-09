@@ -71,13 +71,33 @@ _ha_sensor.SensorEntity = type("SensorEntity", (), {})
 _ha_sensor.SensorStateClass = MagicMock()
 _ha_sensor.SensorStateClass.MEASUREMENT = "measurement"
 
+class _ConfigEntryNotReady(Exception):
+    def __init__(self, *args, translation_domain=None, translation_key=None,
+                 translation_placeholders=None, **kwargs):
+        super().__init__(*args)
+        self.translation_domain = translation_domain
+        self.translation_key = translation_key
+        self.translation_placeholders = translation_placeholders
+
+_ha_exceptions = MagicMock()
+_ha_exceptions.ConfigEntryNotReady = _ConfigEntryNotReady
+
+_ha_issue_registry = MagicMock()
+_ha_issue_registry.IssueSeverity = MagicMock()
+_ha_issue_registry.IssueSeverity.ERROR = "error"
+
+_ha_helpers = MagicMock()
+_ha_helpers.issue_registry = _ha_issue_registry
+
 sys.modules.setdefault("homeassistant", _ha)
 sys.modules.setdefault("homeassistant.config_entries", _ha_config_entries)
 sys.modules.setdefault("homeassistant.const", _ha_const)
 sys.modules.setdefault("homeassistant.core", _ha_core)
-sys.modules.setdefault("homeassistant.helpers", MagicMock())
+sys.modules.setdefault("homeassistant.exceptions", _ha_exceptions)
+sys.modules.setdefault("homeassistant.helpers", _ha_helpers)
 sys.modules.setdefault("homeassistant.helpers.entity", _ha_entity)
 sys.modules.setdefault("homeassistant.helpers.entity_platform", MagicMock())
+sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 sys.modules.setdefault("homeassistant.components", MagicMock())
 sys.modules.setdefault("homeassistant.components.sensor", _ha_sensor)
 

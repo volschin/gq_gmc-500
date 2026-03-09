@@ -9,6 +9,8 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import issue_registry as ir
 
 from .const import DOMAIN, CONF_PORT, DEFAULT_PORT
 from .coordinator import GMCCoordinator
@@ -61,7 +63,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
         coordinator.process_data(data)
 
     server = GMCServer(port=port, data_callback=handle_data)
-    await server.start()
+    try:
+        await server.start()
+    except OSError as err:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            "port_in_use",
+            is_fixable=True,
+            is_persistent=False,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="port_in_use",
+            translation_placeholders={"port": str(port)},
+        )
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="port_unavailable",
+            translation_placeholders={"port": str(port)},
+        ) from err
+
+    ir.async_delete_issue(hass, DOMAIN, "port_in_use")
 
     entry.runtime_data = GMCRuntimeData(coordinator=coordinator, server=server)
 
