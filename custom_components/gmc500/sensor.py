@@ -105,29 +105,21 @@ class GMCBaseSensor(SensorEntity):
         """Return if entity is available."""
         return self._coordinator.is_device_available(self._device_id)
 
+    @property
+    def native_value(self) -> float | None:
+        """Return the sensor value."""
+        device_data = self._coordinator.devices.get(self._device_id)
+        if device_data is None:
+            return None
+        return device_data.get(self._description.key)
+
 
 class GMCRadiationSensor(GMCBaseSensor):
     """Sensor for radiation measurements (CPM, ACPM, µSv/h)."""
 
-    @property
-    def native_value(self) -> float | None:
-        """Return the sensor value."""
-        device_data = self._coordinator.devices.get(self._device_id)
-        if device_data is None:
-            return None
-        return device_data.get(self._description.key)
-
 
 class GMCEnvironmentSensor(GMCBaseSensor):
     """Sensor for environmental measurements (temperature, humidity, pressure)."""
-
-    @property
-    def native_value(self) -> float | None:
-        """Return the sensor value."""
-        device_data = self._coordinator.devices.get(self._device_id)
-        if device_data is None:
-            return None
-        return device_data.get(self._description.key)
 
 
 async def async_setup_entry(
