@@ -34,6 +34,8 @@ _ha_core = MagicMock()
 _ha_core.callback = lambda f: f  # passthrough decorator
 _ha_entity = MagicMock()
 _ha_entity.DeviceInfo = dict  # use dict as a stand-in for DeviceInfo
+_ha_entity.EntityCategory = MagicMock()
+_ha_entity.EntityCategory.DIAGNOSTIC = "diagnostic"
 _ha_entity_platform = MagicMock()
 
 sys.modules.setdefault("homeassistant", MagicMock())
@@ -465,3 +467,43 @@ class TestEntityLifecycle:
         coordinator.process_data(other_data)
 
         sensor.async_write_ha_state.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Tests: Entity category and registry default
+# ---------------------------------------------------------------------------
+
+class TestEntityCategoryAndDefault:
+    """Tests for entity category and registry default."""
+
+    def test_acpm_is_diagnostic(self):
+        """ACPM sensor has EntityCategory.DIAGNOSTIC."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["ACPM"]
+        )
+        assert sensor._attr_entity_category == "diagnostic"
+
+    def test_acpm_is_disabled_by_default(self):
+        """ACPM sensor is disabled in the entity registry by default."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["ACPM"]
+        )
+        assert sensor._attr_entity_registry_enabled_default is False
+
+    def test_cpm_is_not_diagnostic(self):
+        """CPM sensor has no entity category (primary sensor)."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        assert sensor._attr_entity_category is None
+
+    def test_cpm_is_enabled_by_default(self):
+        """CPM sensor is enabled by default."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        assert sensor._attr_entity_registry_enabled_default is True

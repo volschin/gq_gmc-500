@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -31,6 +31,8 @@ class GMCSensorDescription:
     unit: str
     translation_key: str | None = None
     device_class: SensorDeviceClass | None = None
+    entity_category: EntityCategory | None = None
+    entity_registry_enabled_default: bool = True
 
 
 SENSOR_DESCRIPTIONS: dict[str, GMCSensorDescription] = {
@@ -38,7 +40,11 @@ SENSOR_DESCRIPTIONS: dict[str, GMCSensorDescription] = {
         key="CPM", unit="CPM", translation_key="cpm"
     ),
     "ACPM": GMCSensorDescription(
-        key="ACPM", unit="CPM", translation_key="acpm"
+        key="ACPM",
+        unit="CPM",
+        translation_key="acpm",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
     ),
     "uSV": GMCSensorDescription(
         key="uSV", unit="µSv/h", translation_key="dose_rate"
@@ -89,6 +95,8 @@ class GMCBaseSensor(SensorEntity):
         self._attr_native_unit_of_measurement = description.unit
         self._attr_device_class = description.device_class
         self._attr_translation_key = description.translation_key
+        self._attr_entity_category = description.entity_category
+        self._attr_entity_registry_enabled_default = description.entity_registry_enabled_default
 
     @property
     def device_info(self) -> DeviceInfo:

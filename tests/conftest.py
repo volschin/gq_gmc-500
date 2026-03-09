@@ -61,6 +61,8 @@ _ha_core.HomeAssistant = MagicMock
 
 _ha_entity = MagicMock()
 _ha_entity.DeviceInfo = dict
+_ha_entity.EntityCategory = MagicMock()
+_ha_entity.EntityCategory.DIAGNOSTIC = "diagnostic"
 
 _ha_sensor = MagicMock()
 _ha_sensor.SensorDeviceClass = MagicMock()
