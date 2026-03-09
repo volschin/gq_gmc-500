@@ -28,37 +28,33 @@ class GMCSensorDescription:
     """Describe a GMC-500 sensor."""
 
     key: str
-    name: str
     unit: str
+    translation_key: str | None = None
     device_class: SensorDeviceClass | None = None
-    icon: str | None = None
 
 
 SENSOR_DESCRIPTIONS: dict[str, GMCSensorDescription] = {
     "CPM": GMCSensorDescription(
-        key="CPM", name="CPM", unit="CPM", icon="mdi:radioactive"
+        key="CPM", unit="CPM", translation_key="cpm"
     ),
     "ACPM": GMCSensorDescription(
-        key="ACPM", name="Average CPM", unit="CPM", icon="mdi:radioactive"
+        key="ACPM", unit="CPM", translation_key="acpm"
     ),
     "uSV": GMCSensorDescription(
-        key="uSV", name="Dose Rate", unit="µSv/h", icon="mdi:radioactive"
+        key="uSV", unit="µSv/h", translation_key="dose_rate"
     ),
     "tmp": GMCSensorDescription(
         key="tmp",
-        name="Temperature",
         unit="°C",
         device_class=SensorDeviceClass.TEMPERATURE,
     ),
     "hmdt": GMCSensorDescription(
         key="hmdt",
-        name="Humidity",
         unit="%",
         device_class=SensorDeviceClass.HUMIDITY,
     ),
     "ap": GMCSensorDescription(
         key="ap",
-        name="Atmospheric Pressure",
         unit="hPa",
         device_class=SensorDeviceClass.ATMOSPHERIC_PRESSURE,
     ),
@@ -90,10 +86,9 @@ class GMCBaseSensor(SensorEntity):
         self._description = description
 
         self._attr_unique_id = f"{DOMAIN}_{aid}_{gid}_{description.key.lower()}"
-        self._attr_name = description.name
         self._attr_native_unit_of_measurement = description.unit
         self._attr_device_class = description.device_class
-        self._attr_icon = description.icon
+        self._attr_translation_key = description.translation_key
 
     @property
     def device_info(self) -> DeviceInfo:

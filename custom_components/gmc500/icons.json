@@ -1,0 +1,15 @@
+{
+  "entity": {
+    "sensor": {
+      "cpm": {
+        "default": "mdi:radioactive"
+      },
+      "acpm": {
+        "default": "mdi:radioactive"
+      },
+      "dose_rate": {
+        "default": "mdi:radioactive"
+      }
+    }
+  }
+}

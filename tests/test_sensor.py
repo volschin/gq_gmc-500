@@ -255,14 +255,6 @@ class TestSensorAttributes:
         )
         assert sensor.available is False
 
-    def test_sensor_name(self):
-        """Sensor name attribute is set from description."""
-        coordinator = _make_coordinator()
-        sensor = GMCRadiationSensor(
-            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
-        )
-        assert sensor._attr_name == "CPM"
-
     def test_sensor_unit(self):
         """Sensor unit attribute is set from description."""
         coordinator = _make_coordinator()
@@ -271,13 +263,45 @@ class TestSensorAttributes:
         )
         assert sensor._attr_native_unit_of_measurement == "°C"
 
-    def test_sensor_icon(self):
-        """Radiation sensors have the radioactive icon."""
+    def test_sensor_translation_key_cpm(self):
+        """CPM sensor has translation key set."""
         coordinator = _make_coordinator()
         sensor = GMCRadiationSensor(
             coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
         )
-        assert sensor._attr_icon == "mdi:radioactive"
+        assert sensor._attr_translation_key == "cpm"
+
+    def test_sensor_translation_key_acpm(self):
+        """ACPM sensor has translation key set."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["ACPM"]
+        )
+        assert sensor._attr_translation_key == "acpm"
+
+    def test_sensor_translation_key_dose_rate(self):
+        """Dose rate sensor has translation key set."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["uSV"]
+        )
+        assert sensor._attr_translation_key == "dose_rate"
+
+    def test_sensor_no_hardcoded_icon_for_radiation(self):
+        """Radiation sensors do not have a hardcoded icon (icons come from icons.json)."""
+        coordinator = _make_coordinator()
+        sensor = GMCRadiationSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["CPM"]
+        )
+        assert getattr(sensor, "_attr_icon", None) is None
+
+    def test_env_sensor_no_translation_key(self):
+        """Environment sensors with device class have no translation key (HA provides name)."""
+        coordinator = _make_coordinator()
+        sensor = GMCEnvironmentSensor(
+            coordinator, AID, GID, SENSOR_DESCRIPTIONS["tmp"]
+        )
+        assert sensor._attr_translation_key is None
 
 
 # ---------------------------------------------------------------------------

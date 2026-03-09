@@ -49,5 +49,18 @@
     "port_unavailable": {
       "message": "Cannot start HTTP server on port {port}: port is already in use."
     }
+  },
+  "entity": {
+    "sensor": {
+      "cpm": {
+        "name": "CPM"
+      },
+      "acpm": {
+        "name": "Average CPM"
+      },
+      "dose_rate": {
+        "name": "Dose Rate"
+      }
+    }
   }
 }
