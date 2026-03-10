@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import aiohttp
@@ -66,7 +66,7 @@ class GMCCoordinator:
         last_seen = self.devices[device_id].get("last_seen")
         if last_seen is None:
             return False
-        available = (datetime.now() - last_seen).total_seconds() <= AVAILABILITY_TIMEOUT
+        available = (datetime.now(tz=timezone.utc) - last_seen).total_seconds() <= AVAILABILITY_TIMEOUT
 
         prev = self._availability_state.get(device_id)
         if prev is True and not available:
@@ -97,7 +97,7 @@ class GMCCoordinator:
             return
 
         was_available = self._availability_state.get(device_id)
-        data["last_seen"] = datetime.now()
+        data["last_seen"] = datetime.now(tz=timezone.utc)
         self.devices[device_id] = data
 
         if was_available is False:
@@ -107,15 +107,16 @@ class GMCCoordinator:
         for listener in self._listeners:
             listener(device_id, data)
 
-        self.hass.async_create_task(self.forward_to_gmcmap(data))
+        if device_id in self._registered_devices:
+            self.hass.async_create_task(self.forward_to_gmcmap(data))
 
     async def forward_to_gmcmap(self, data: dict[str, Any]) -> None:
         """Forward device data to gmcmap.com with retry logic."""
         params = {k: v for k, v in data.items() if k != "last_seen"}
 
-        for attempt in range(GMCMAP_MAX_RETRIES):
-            try:
-                async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
+            for attempt in range(GMCMAP_MAX_RETRIES):
+                try:
                     async with session.get(
                         GMCMAP_URL,
                         params=params,
@@ -129,15 +130,15 @@ class GMCCoordinator:
                             resp.status,
                             body,
                         )
-            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-                _LOGGER.warning(
-                    "gmcmap.com forwarding attempt %d failed: %s",
-                    attempt + 1,
-                    err,
-                )
+                except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                    _LOGGER.warning(
+                        "gmcmap.com forwarding attempt %d failed: %s",
+                        attempt + 1,
+                        err,
+                    )
 
-            if attempt < GMCMAP_MAX_RETRIES - 1:
-                await asyncio.sleep(2**attempt)
+                if attempt < GMCMAP_MAX_RETRIES - 1:
+                    await asyncio.sleep(2**attempt)
 
         _LOGGER.warning(
             "gmcmap.com forwarding failed after %d attempts for device %s/%s",

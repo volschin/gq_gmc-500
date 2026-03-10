@@ -66,7 +66,13 @@ def _make_hass():
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.config_entries.flow.async_init = AsyncMock()
-    hass.async_create_task = MagicMock(side_effect=lambda coro: coro)
+    def _close_coro(coro):
+        import asyncio
+        if asyncio.iscoroutine(coro):
+            coro.close()
+        return MagicMock()
+
+    hass.async_create_task = MagicMock(side_effect=_close_coro)
     return hass
 
 

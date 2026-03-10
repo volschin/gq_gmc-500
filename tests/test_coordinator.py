@@ -3,19 +3,29 @@
 import logging
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from custom_components.gmc500.coordinator import GMCCoordinator
 from custom_components.gmc500.const import AVAILABILITY_TIMEOUT
 
 
+def _make_mock_hass():
+    """Create a mock hass that safely closes coroutines passed to async_create_task."""
+    hass = MagicMock()
+    hass.bus = MagicMock()
+
+    def _close_coro(coro):
+        coro.close()
+        return MagicMock()
+
+    hass.async_create_task = MagicMock(side_effect=_close_coro)
+    return hass
+
+
 @pytest.fixture
 def coordinator():
     """Create a coordinator instance."""
-    hass = MagicMock()
-    hass.bus = MagicMock()
-    coord = GMCCoordinator(hass)
-    return coord
+    return GMCCoordinator(_make_mock_hass())
 
 
 def _valid_data():
@@ -67,7 +77,7 @@ def test_device_availability_false_when_stale(coordinator):
     coordinator.register_device("0230111", "0034021", "My Counter")
     coordinator.process_data(_valid_data())
     coordinator.devices["0230111_0034021"]["last_seen"] = (
-        datetime.now() - timedelta(seconds=AVAILABILITY_TIMEOUT + 1)
+        datetime.now(tz=timezone.utc) - timedelta(seconds=AVAILABILITY_TIMEOUT + 1)
     )
     assert not coordinator.is_device_available("0230111_0034021")
 
@@ -82,7 +92,7 @@ def test_ignored_device_not_processed(coordinator):
 @pytest.mark.asyncio
 async def test_forward_to_gmcmap_success():
     """Test successful forwarding to gmcmap.com."""
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
 
     mock_resp = AsyncMock()
@@ -102,7 +112,7 @@ async def test_forward_to_gmcmap_success():
 @pytest.mark.asyncio
 async def test_forward_to_gmcmap_retries_on_failure():
     """Test that forwarding retries on failure."""
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
 
     mock_resp = AsyncMock()
@@ -158,7 +168,7 @@ class TestAvailabilityLogging:
         hass = MagicMock()
         coordinator = GMCCoordinator(hass)
         coordinator.devices["AID_GID"] = {
-            "last_seen": datetime.now() - timedelta(minutes=20)
+            "last_seen": datetime.now(tz=timezone.utc) - timedelta(minutes=20)
         }
         coordinator._availability_state["AID_GID"] = True  # Was online
 
@@ -176,7 +186,7 @@ class TestAvailabilityLogging:
         hass = MagicMock()
         coordinator = GMCCoordinator(hass)
         coordinator.devices["AID_GID"] = {
-            "last_seen": datetime.now() - timedelta(minutes=20)
+            "last_seen": datetime.now(tz=timezone.utc) - timedelta(minutes=20)
         }
         coordinator._availability_state["AID_GID"] = False  # Already logged offline
 
@@ -191,7 +201,7 @@ class TestAvailabilityLogging:
 
 def test_unignore_device_removes_from_ignored():
     """unignore_device removes a device from the ignored set."""
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
     coordinator.ignore_device("AID", "GID")
     assert coordinator.is_device_ignored("AID", "GID")
@@ -201,7 +211,7 @@ def test_unignore_device_removes_from_ignored():
 
 def test_unignore_device_is_idempotent():
     """unignore_device on a non-ignored device does not raise."""
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
     # Should not raise even if the device was never ignored
     coordinator.unignore_device("AID", "GID")
@@ -210,7 +220,7 @@ def test_unignore_device_is_idempotent():
 
 def test_is_device_available_false_when_last_seen_is_none():
     """is_device_available returns False when device exists but last_seen is None."""
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
     coordinator.devices["AID_GID"] = {}  # no last_seen key
     assert not coordinator.is_device_available("AID_GID")
@@ -221,7 +231,7 @@ async def test_forward_to_gmcmap_retries_on_client_error():
     """forward_to_gmcmap retries on aiohttp.ClientError and logs all attempts."""
     import aiohttp as _aiohttp
 
-    hass = MagicMock()
+    hass = _make_mock_hass()
     coordinator = GMCCoordinator(hass)
 
     # Create a context manager mock whose __aenter__ raises ClientError

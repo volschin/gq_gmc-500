@@ -86,17 +86,18 @@ class TestPortAvailable:
         """Port check returns True when bind succeeds."""
         with patch("custom_components.gmc500.config_flow.socket.socket") as mock_sock_cls:
             mock_sock = MagicMock()
-            mock_sock_cls.return_value = mock_sock
+            mock_sock_cls.return_value.__enter__ = MagicMock(return_value=mock_sock)
+            mock_sock_cls.return_value.__exit__ = MagicMock(return_value=False)
             assert check_port_available(9999) is True
             mock_sock.bind.assert_called_once_with(("0.0.0.0", 9999))
-            mock_sock.close.assert_called_once()
 
     def test_returns_false_when_port_in_use(self):
         """Port check returns False when bind raises OSError."""
         with patch("custom_components.gmc500.config_flow.socket.socket") as mock_sock_cls:
             mock_sock = MagicMock()
             mock_sock.bind.side_effect = OSError("Address already in use")
-            mock_sock_cls.return_value = mock_sock
+            mock_sock_cls.return_value.__enter__ = MagicMock(return_value=mock_sock)
+            mock_sock_cls.return_value.__exit__ = MagicMock(return_value=False)
             assert check_port_available(9999) is False
 
 

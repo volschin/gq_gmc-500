@@ -65,6 +65,12 @@ from custom_components.gmc500.const import DOMAIN  # noqa: E402
 def _make_coordinator() -> GMCCoordinator:
     """Create a coordinator with a mock hass object."""
     hass = MagicMock()
+
+    def _close_coro(coro):
+        coro.close()
+        return MagicMock()
+
+    hass.async_create_task = MagicMock(side_effect=_close_coro)
     return GMCCoordinator(hass)
 
 
@@ -313,8 +319,8 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_listener_creates_radiation_sensors_for_known_device(self):
         """Listener creates radiation sensors when a known device reports."""
-        hass = MagicMock()
-        coordinator = GMCCoordinator(hass)
+        coordinator = _make_coordinator()
+        hass = coordinator.hass
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()
@@ -338,8 +344,8 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_listener_creates_env_sensors_when_present(self):
         """Listener creates environment sensors when env data is present."""
-        hass = MagicMock()
-        coordinator = GMCCoordinator(hass)
+        coordinator = _make_coordinator()
+        hass = coordinator.hass
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()
@@ -361,8 +367,8 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_listener_ignores_unknown_device(self):
         """Listener does not create entities for unregistered devices."""
-        hass = MagicMock()
-        coordinator = GMCCoordinator(hass)
+        coordinator = _make_coordinator()
+        hass = coordinator.hass
         # Device is NOT registered
 
         entry = MagicMock()
@@ -380,8 +386,8 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_listener_tracks_devices_only_once(self):
         """Listener does not re-create entities for already-tracked devices."""
-        hass = MagicMock()
-        coordinator = GMCCoordinator(hass)
+        coordinator = _make_coordinator()
+        hass = coordinator.hass
         coordinator.register_device(AID, GID, "My Counter")
 
         entry = MagicMock()

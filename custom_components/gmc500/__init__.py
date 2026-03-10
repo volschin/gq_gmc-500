@@ -42,7 +42,7 @@ else:
 async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
     """Set up GMC-500 from a config entry."""
     coordinator = GMCCoordinator(hass)
-    port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+    port = entry.options.get(CONF_PORT, entry.data.get(CONF_PORT, DEFAULT_PORT))
 
     async def handle_data(data: dict[str, Any]) -> None:
         """Handle incoming data from a GMC-500 device."""

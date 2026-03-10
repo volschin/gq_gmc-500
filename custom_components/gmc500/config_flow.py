@@ -19,11 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 def test_port_available(port: int) -> bool:
     """Test if a TCP port is available."""
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        sock.bind(("0.0.0.0", port))
-        sock.close()
-        return True
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
+            sock.bind(("0.0.0.0", port))
+            return True
     except OSError:
         return False
 

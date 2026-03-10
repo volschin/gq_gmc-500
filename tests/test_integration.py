@@ -22,7 +22,14 @@ def unused_tcp_port():
 async def test_full_flow_server_to_coordinator(unused_tcp_port):
     """Test complete data flow: HTTP request -> coordinator -> listener notification."""
     hass = MagicMock()
-    hass.async_create_task = MagicMock(side_effect=lambda coro: coro)
+
+    def _close_coro(coro):
+        import asyncio
+        if asyncio.iscoroutine(coro):
+            coro.close()
+        return MagicMock()
+
+    hass.async_create_task = MagicMock(side_effect=_close_coro)
 
     coordinator = GMCCoordinator(hass)
     coordinator.register_device("0230111", "0034021", "Test Counter")
