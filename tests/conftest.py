@@ -6,6 +6,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # ---------------------------------------------------------------------------
+# Mock voluptuous if not installed (CI does not install it)
+# ---------------------------------------------------------------------------
+sys.modules.setdefault("voluptuous", MagicMock())
+
+# ---------------------------------------------------------------------------
 # Mock homeassistant modules globally so that importing any submodule of
 # custom_components.gmc500 (which triggers __init__.py) does not fail.
 # Individual test files may override specific attributes as needed.
