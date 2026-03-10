@@ -5,6 +5,7 @@
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/volschin/gq_gmc-500",
+  "issue_tracker": "https://github.com/volschin/gq_gmc-500/issues",
   "integration_type": "hub",
   "iot_class": "local_push",
   "quality_scale": "gold",

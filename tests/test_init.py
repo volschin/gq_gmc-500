@@ -53,8 +53,6 @@ from custom_components.gmc500 import (  # noqa: E402
     async_remove_config_entry_device,
     _async_update_listener,
 )
-from custom_components.gmc500.const import DOMAIN  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers

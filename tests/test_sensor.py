@@ -5,8 +5,7 @@ homeassistant modules via sys.modules before importing sensor.py.
 """
 
 import sys
-from unittest.mock import MagicMock, patch
-from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -48,10 +47,8 @@ sys.modules.setdefault("homeassistant.helpers.entity", _ha_entity)
 sys.modules.setdefault("homeassistant.helpers.entity_platform", _ha_entity_platform)
 
 from custom_components.gmc500.sensor import (  # noqa: E402
-    GMCBaseSensor,
     GMCEnvironmentSensor,
     GMCRadiationSensor,
-    GMCSensorDescription,
     SENSOR_DESCRIPTIONS,
     RADIATION_SENSORS,
     ENVIRONMENT_SENSORS,

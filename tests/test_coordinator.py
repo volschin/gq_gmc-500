@@ -2,7 +2,6 @@
 
 import logging
 import pytest
-import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timedelta
 

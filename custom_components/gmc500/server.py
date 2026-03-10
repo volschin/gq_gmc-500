@@ -13,9 +13,6 @@ from .const import (
     PARAM_CPM,
     PARAM_ACPM,
     PARAM_USV,
-    PARAM_TMP,
-    PARAM_HMDT,
-    PARAM_AP,
     REQUIRED_PARAMS,
     OPTIONAL_PARAMS,
 )

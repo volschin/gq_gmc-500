@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Any
+from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -30,7 +31,7 @@ class GMCRuntimeData:
     server: GMCServer
 
 
-type GMCConfigEntry = ConfigEntry[GMCRuntimeData]
+GMCConfigEntry: TypeAlias = ConfigEntry[GMCRuntimeData]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
