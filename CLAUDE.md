@@ -17,6 +17,12 @@ Home Assistant custom integration for the GQ Electronics GMC-500 Geiger counter.
 
 # Run a specific test
 .venv/bin/pytest tests/test_server.py::test_server_responds_ok -v
+
+# Lint
+.venv/bin/ruff check custom_components/ tests/
+
+# Run tests with coverage report
+.venv/bin/pytest --cov=custom_components.gmc500 --cov-report=term-missing -v
 ```
 
 No build step required — this is a Python custom component installed directly into Home Assistant.
@@ -54,3 +60,21 @@ Key fixture: `unused_tcp_port` (in conftest.py) provides a free port for server 
 ## Constants
 
 All protocol constants, parameter names, and configuration keys are in `const.py`. Domain is `gmc500`.
+
+## CI / GitHub Workflows
+
+| Workflow | File | Trigger |
+|----------|------|---------|
+| Test & Lint | `.github/workflows/test.yml` | push/PR → main |
+| HACS Validation | `.github/workflows/hacs.yml` | push/PR → main |
+| Hassfest | `.github/workflows/hassfest.yml` | push/PR → main |
+| Release Drafter | `.github/workflows/release.yml` | push → main |
+| Renovate | `.github/renovate.json5` | scheduled by GitHub App |
+
+Test matrix: Python 3.11, 3.12, 3.13. Coverage gate: 80%. Linting: ruff.
+
+## Brand Icons
+
+Icons live in `custom_components/gmc500/brand/`:
+- `icon.png` — square icon shown in HACS and integrations list
+- `logo.png` — wider logo for the integration detail page

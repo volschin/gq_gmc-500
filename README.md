@@ -2,6 +2,8 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration) [![GitHub Release](https://img.shields.io/github/v/release/volschin/gq_gmc-500?style=for-the-badge)](https://github.com/volschin/gq_gmc-500/releases) [![License](https://img.shields.io/github/license/volschin/gq_gmc-500?style=for-the-badge)](LICENSE) [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Gold-FFD700?style=for-the-badge)](https://www.home-assistant.io/docs/quality_scale/)
 
+[![Tests](https://img.shields.io/github/actions/workflow/status/volschin/gq_gmc-500/test.yml?branch=main&style=for-the-badge&label=Tests)](https://github.com/volschin/gq_gmc-500/actions/workflows/test.yml) [![HACS Validation](https://img.shields.io/github/actions/workflow/status/volschin/gq_gmc-500/hacs.yml?branch=main&style=for-the-badge&label=HACS)](https://github.com/volschin/gq_gmc-500/actions/workflows/hacs.yml) [![Hassfest](https://img.shields.io/github/actions/workflow/status/volschin/gq_gmc-500/hassfest.yml?branch=main&style=for-the-badge&label=Hassfest)](https://github.com/volschin/gq_gmc-500/actions/workflows/hassfest.yml)
+
 Direct integration of the [GQ Electronics GMC-500](https://www.gqelectronicsllc.com/) Geiger counter into Home Assistant via **local push over WiFi** — no cloud, no polling, no extra hardware.
 
 ## ✨ Features
