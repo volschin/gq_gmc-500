@@ -44,6 +44,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
     coordinator = GMCCoordinator(hass)
     port = entry.options.get(CONF_PORT, entry.data.get(CONF_PORT, DEFAULT_PORT))
 
+    # Restore registered devices from config entry data
+    for device_id, name in entry.data.get("registered_devices", {}).items():
+        aid, gid = device_id.split("_", 1)
+        coordinator.register_device(aid, gid, name)
+
     async def handle_data(data: dict[str, Any]) -> None:
         """Handle incoming data from a GMC-500 device."""
         aid = data["AID"]

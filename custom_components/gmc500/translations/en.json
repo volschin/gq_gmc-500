@@ -31,6 +31,7 @@
     },
     "abort": {
       "already_configured": "This device is already configured",
+      "device_registered": "Device has been registered successfully",
       "reconfigure_successful": "Re-configuration was successful"
     }
   },

@@ -83,10 +83,25 @@ class GMC500ConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle user confirmation of discovered device."""
         if user_input is not None:
-            return self.async_create_entry(
-                title=user_input.get("name", f"GMC-500 {self._discovery_data['gid']}"),
-                data=self._discovery_data,
-            )
+            aid = self._discovery_data["aid"]
+            gid = self._discovery_data["gid"]
+            name = user_input.get("name", f"GMC-500 {self._discovery_data['gid']}")
+
+            # Register device in the existing config entry's coordinator
+            entries = self.hass.config_entries.async_entries(DOMAIN)
+            if entries:
+                entry = entries[0]
+                coordinator = entry.runtime_data.coordinator
+                coordinator.register_device(aid, gid, name)
+
+                # Persist registration in config entry data
+                registered = dict(entry.data.get("registered_devices", {}))
+                registered[f"{aid}_{gid}"] = name
+                self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, "registered_devices": registered}
+                )
+
+            return self.async_abort(reason="device_registered")
 
         return self.async_show_form(
             step_id="discovery_confirm",

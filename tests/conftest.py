@@ -40,6 +40,9 @@ class _MockConfigFlow:
     def _abort_if_unique_id_configured(self):
         pass
 
+    def async_abort(self, reason=None, **kwargs):
+        return {"type": "abort", "reason": reason}
+
     def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
         return {"type": "abort", "reason": "reconfigure_successful"}
 

@@ -35,6 +35,9 @@ class _MockConfigFlow:
     def _abort_if_unique_id_configured(self):
         pass
 
+    def async_abort(self, reason=None, **kwargs):
+        return {"type": "abort", "reason": reason}
+
     def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
         return {"type": "abort", "reason": "reconfigure_successful"}
 
@@ -154,15 +157,26 @@ class TestConfigFlowDiscoveryStep:
     """Tests for the discovery step of the config flow."""
 
     def _make_flow(self):
-        """Create a config flow instance with a mocked hass."""
+        """Create a config flow instance with a mocked hass and existing entry."""
+        from custom_components.gmc500.coordinator import GMCCoordinator
+
         flow = GMC500ConfigFlow()
         flow.hass = MagicMock()
-        return flow
+
+        # Set up an existing config entry with a coordinator
+        coordinator = GMCCoordinator(flow.hass)
+        entry = MagicMock()
+        entry.data = {CONF_PORT: DEFAULT_PORT}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = coordinator
+        flow.hass.config_entries.async_entries.return_value = [entry]
+
+        return flow, coordinator, entry
 
     @pytest.mark.asyncio
     async def test_sets_unique_id_and_shows_confirm_form(self):
         """Discovery step sets unique_id and shows confirmation form."""
-        flow = self._make_flow()
+        flow, _, _ = self._make_flow()
         discovery_data = {"aid": "0230111", "gid": "0034021", "cpm": 15}
 
         result = await flow.async_step_discovery(discovery_data)
@@ -171,31 +185,39 @@ class TestConfigFlowDiscoveryStep:
         assert result["step_id"] == "discovery_confirm"
 
     @pytest.mark.asyncio
-    async def test_confirm_creates_entry_with_custom_name(self):
-        """Discovery confirm creates entry with user-provided name."""
-        flow = self._make_flow()
+    async def test_confirm_registers_device_with_custom_name(self):
+        """Discovery confirm registers device in coordinator with user name."""
+        flow, coordinator, entry = self._make_flow()
         flow._discovery_data = {"aid": "0230111", "gid": "0034021", "cpm": 15}
 
         result = await flow.async_step_discovery_confirm(
             user_input={"name": "My Geiger Counter"}
         )
-        assert result["type"] == "create_entry"
-        assert result["title"] == "My Geiger Counter"
+        assert result["type"] == "abort"
+        assert result["reason"] == "device_registered"
+        assert coordinator.is_device_known("0230111", "0034021")
+        flow.hass.config_entries.async_update_entry.assert_called_once()
+        updated_data = flow.hass.config_entries.async_update_entry.call_args
+        assert "0230111_0034021" in updated_data.kwargs["data"]["registered_devices"]
+        assert updated_data.kwargs["data"]["registered_devices"]["0230111_0034021"] == "My Geiger Counter"
 
     @pytest.mark.asyncio
-    async def test_confirm_creates_entry_with_default_name(self):
+    async def test_confirm_registers_device_with_default_name(self):
         """Discovery confirm uses default name when none provided."""
-        flow = self._make_flow()
+        flow, coordinator, entry = self._make_flow()
         flow._discovery_data = {"aid": "0230111", "gid": "0034021", "cpm": 15}
 
         result = await flow.async_step_discovery_confirm(user_input={})
-        assert result["type"] == "create_entry"
-        assert result["title"] == "GMC-500 0034021"
+        assert result["type"] == "abort"
+        assert result["reason"] == "device_registered"
+        assert coordinator.is_device_known("0230111", "0034021")
+        updated_data = flow.hass.config_entries.async_update_entry.call_args
+        assert updated_data.kwargs["data"]["registered_devices"]["0230111_0034021"] == "GMC-500 0034021"
 
     @pytest.mark.asyncio
     async def test_confirm_form_has_placeholders(self):
         """Discovery confirm form includes description placeholders."""
-        flow = self._make_flow()
+        flow, _, _ = self._make_flow()
         flow._discovery_data = {"aid": "0230111", "gid": "0034021", "cpm": 15}
 
         result = await flow.async_step_discovery_confirm(user_input=None)
