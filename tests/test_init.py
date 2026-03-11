@@ -202,8 +202,8 @@ class TestHandleDataCallback:
     """Tests for the handle_data callback created inside async_setup_entry."""
 
     @pytest.mark.asyncio
-    async def test_triggers_discovery_for_unknown_device(self):
-        """handle_data triggers a discovery flow for unknown devices."""
+    async def test_auto_registers_unknown_device(self):
+        """handle_data auto-registers unknown devices and persists them."""
         hass = _make_hass()
         entry = _make_entry()
 
@@ -234,7 +234,10 @@ class TestHandleDataCallback:
         test_data = {"AID": "0230111", "GID": "0034021", "CPM": 42.0}
         await data_callback(test_data)
 
-        hass.async_create_task.assert_called()
+        mock_coord.register_device.assert_called_once_with(
+            "0230111", "0034021", "GMC-500 0034021"
+        )
+        hass.config_entries.async_update_entry.assert_called_once()
         mock_coord.process_data.assert_called_once_with(test_data)
 
     @pytest.mark.asyncio

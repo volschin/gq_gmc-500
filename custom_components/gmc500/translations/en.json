@@ -11,13 +11,6 @@
           "port": "Port for receiving GMC-500 data (1024-65535)"
         }
       },
-      "discovery_confirm": {
-        "title": "New Geiger Counter Detected",
-        "description": "A new GMC-500 device was detected.\n\nAccount ID: {aid}\nDevice ID: {gid}\nLast CPM: {cpm}",
-        "data": {
-          "name": "Device Name"
-        }
-      },
       "reconfigure": {
         "title": "Reconfigure GQ GMC-500",
         "description": "Update the HTTP server port.",
@@ -31,7 +24,6 @@
     },
     "abort": {
       "already_configured": "This device is already configured",
-      "device_registered": "Device has been registered successfully",
       "reconfigure_successful": "Re-configuration was successful"
     }
   },

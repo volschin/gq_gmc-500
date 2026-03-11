@@ -32,10 +32,6 @@ class GMC500ConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    def __init__(self) -> None:
-        """Initialize flow."""
-        self._discovery_data: dict[str, Any] | None = None
-
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -65,59 +61,6 @@ class GMC500ConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
-        )
-
-    async def async_step_discovery(
-        self, discovery_data: dict[str, Any]
-    ) -> ConfigFlowResult:
-        """Handle device discovery."""
-        self._discovery_data = discovery_data
-        aid = discovery_data["aid"]
-        gid = discovery_data["gid"]
-        await self.async_set_unique_id(f"{aid}_{gid}")
-        self._abort_if_unique_id_configured()
-        return await self.async_step_discovery_confirm()
-
-    async def async_step_discovery_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle user confirmation of discovered device."""
-        if user_input is not None:
-            aid = self._discovery_data["aid"]
-            gid = self._discovery_data["gid"]
-            name = user_input.get("name", f"GMC-500 {self._discovery_data['gid']}")
-
-            # Register device in the existing config entry's coordinator
-            entries = self.hass.config_entries.async_entries(DOMAIN)
-            if entries:
-                entry = entries[0]
-                coordinator = entry.runtime_data.coordinator
-                coordinator.register_device(aid, gid, name)
-
-                # Persist registration in config entry data
-                registered = dict(entry.data.get("registered_devices", {}))
-                registered[f"{aid}_{gid}"] = name
-                self.hass.config_entries.async_update_entry(
-                    entry, data={**entry.data, "registered_devices": registered}
-                )
-
-            return self.async_abort(reason="device_registered")
-
-        return self.async_show_form(
-            step_id="discovery_confirm",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        "name",
-                        default=f"GMC-500 {self._discovery_data['gid']}",
-                    ): str,
-                }
-            ),
-            description_placeholders={
-                "aid": self._discovery_data["aid"],
-                "gid": self._discovery_data["gid"],
-                "cpm": str(self._discovery_data.get("cpm", "N/A")),
-            },
         )
 
     async def async_step_reconfigure(

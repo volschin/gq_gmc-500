@@ -58,19 +58,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
             return
 
         if not coordinator.is_device_known(aid, gid):
-            hass.async_create_task(
-                hass.config_entries.flow.async_init(
-                    DOMAIN,
-                    context={"source": "discovery"},
-                    data={
-                        "aid": aid,
-                        "gid": gid,
-                        "cpm": data.get("CPM"),
-                    },
-                )
+            name = f"GMC-500 {gid}"
+            coordinator.register_device(aid, gid, name)
+            _LOGGER.info("Auto-registered new device %s/%s as '%s'", aid, gid, name)
+
+            # Persist registration in config entry data
+            registered = dict(entry.data.get("registered_devices", {}))
+            registered[f"{aid}_{gid}"] = name
+            hass.config_entries.async_update_entry(
+                entry, data={**entry.data, "registered_devices": registered}
             )
-            coordinator.process_data(data)
-            return
 
         coordinator.process_data(data)
 
