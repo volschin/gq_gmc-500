@@ -161,7 +161,8 @@ class TestOptionsFlow:
         config_entry = MagicMock()
         config_entry.data = {CONF_PORT: current_port}
         config_entry.options = {}
-        flow = GMC500OptionsFlow(config_entry)
+        flow = GMC500OptionsFlow()
+        flow.config_entry = config_entry
         flow.hass = MagicMock()
         return flow
 
@@ -216,7 +217,6 @@ class TestGetOptionsFlow:
         config_entry = MagicMock()
         result = GMC500ConfigFlow.async_get_options_flow(config_entry)
         assert isinstance(result, GMC500OptionsFlow)
-        assert result.config_entry is config_entry
 
 
 # ---------------------------------------------------------------------------

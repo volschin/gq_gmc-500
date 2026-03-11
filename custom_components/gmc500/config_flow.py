@@ -100,15 +100,11 @@ class GMC500ConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get options flow handler."""
-        return GMC500OptionsFlow(config_entry)
+        return GMC500OptionsFlow()
 
 
 class GMC500OptionsFlow(OptionsFlow):
     """Handle options flow for GMC-500."""
-
-    def __init__(self, config_entry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
