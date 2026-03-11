@@ -3,7 +3,7 @@
 DOMAIN = "gmc500"
 
 DEFAULT_PORT = 8080
-GMCMAP_URL = "http://www.gmcmap.com/log2.asp"
+GMCMAP_URL = "https://www.gmcmap.com/log2.asp"
 GMCMAP_TIMEOUT = 10
 GMCMAP_MAX_RETRIES = 3
 
