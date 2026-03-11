@@ -36,10 +36,10 @@ Direct integration of the [GQ Electronics GMC-500](https://www.gqelectronicsllc.
 
 ### 1 — Configure the device
 
-On the GMC-500, go to **Menu → WiFi → WiFi Server**:
-- **Server**: your HA instance IP (e.g. `192.168.1.10`)
+On the GMC-500, go to **Menu → WiFi → Server**:
+- **Server**: your HA instance IP (e.g. `192.168.1.10`), take care, the GMC is snippy regarding the server - ha and ha.local fails for me.
 - **URL**: the GMC-500 is missing a `:` as selectable char for ports other than 80, so you need to integrate it in a proxy running at port 80 with a prefix (e.g. `gmc500/log2.asp`)
-- Enable the WiFi server
+- Enable the WiFi
 
 ### 2 — Add the integration
 
