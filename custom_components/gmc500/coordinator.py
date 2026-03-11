@@ -25,9 +25,10 @@ _LOGGER = logging.getLogger(__name__)
 class GMCCoordinator:
     """Manage GMC-500 device data and gmcmap.com forwarding."""
 
-    def __init__(self, hass: Any) -> None:
+    def __init__(self, hass: Any, entry: Any = None) -> None:
         """Initialize coordinator."""
         self.hass = hass
+        self._entry = entry
         self.devices: dict[str, dict[str, Any]] = {}
         self._registered_devices: dict[str, str] = {}
         self._ignored_devices: set[str] = set()
@@ -108,37 +109,46 @@ class GMCCoordinator:
             listener(device_id, data)
 
         if device_id in self._registered_devices:
-            self.hass.async_create_task(self.forward_to_gmcmap(data))
+            if self._entry is not None:
+                self._entry.async_create_background_task(
+                    self.hass,
+                    self.forward_to_gmcmap(data),
+                    f"gmc500_forward_{device_id}",
+                )
+            else:
+                self.hass.async_create_task(self.forward_to_gmcmap(data))
 
     async def forward_to_gmcmap(self, data: dict[str, Any]) -> None:
         """Forward device data to gmcmap.com with retry logic."""
+        from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
         params = {k: v for k, v in data.items() if k != "last_seen"}
+        session = async_get_clientsession(self.hass)
 
-        async with aiohttp.ClientSession() as session:
-            for attempt in range(GMCMAP_MAX_RETRIES):
-                try:
-                    async with session.get(
-                        GMCMAP_URL,
-                        params=params,
-                        timeout=aiohttp.ClientTimeout(total=GMCMAP_TIMEOUT),
-                    ) as resp:
-                        if resp.status == 200:
-                            return
-                        body = await resp.text()
-                        _LOGGER.warning(
-                            "gmcmap.com returned status %s: %s",
-                            resp.status,
-                            body,
-                        )
-                except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+        for attempt in range(GMCMAP_MAX_RETRIES):
+            try:
+                async with session.get(
+                    GMCMAP_URL,
+                    params=params,
+                    timeout=aiohttp.ClientTimeout(total=GMCMAP_TIMEOUT),
+                ) as resp:
+                    if resp.status == 200:
+                        return
+                    body = await resp.text()
                     _LOGGER.warning(
-                        "gmcmap.com forwarding attempt %d failed: %s",
-                        attempt + 1,
-                        err,
+                        "gmcmap.com returned status %s: %s",
+                        resp.status,
+                        body,
                     )
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                _LOGGER.warning(
+                    "gmcmap.com forwarding attempt %d failed: %s",
+                    attempt + 1,
+                    err,
+                )
 
-                if attempt < GMCMAP_MAX_RETRIES - 1:
-                    await asyncio.sleep(2**attempt)
+            if attempt < GMCMAP_MAX_RETRIES - 1:
+                await asyncio.sleep(2**attempt)
 
         _LOGGER.warning(
             "gmcmap.com forwarding failed after %d attempts for device %s/%s",

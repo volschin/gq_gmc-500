@@ -57,6 +57,7 @@ class _MockOptionsFlow:
 
 _ha_config_entries.ConfigFlow = _MockConfigFlow
 _ha_config_entries.OptionsFlow = _MockOptionsFlow
+_ha_config_entries.OptionsFlowWithReload = _MockOptionsFlow
 _ha_config_entries.ConfigFlowResult = dict
 
 _ha_core = MagicMock()

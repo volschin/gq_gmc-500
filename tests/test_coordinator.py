@@ -100,13 +100,16 @@ async def test_forward_to_gmcmap_success():
     mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
     mock_resp.__aexit__ = AsyncMock(return_value=False)
 
-    mock_session = AsyncMock()
+    mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "homeassistant.helpers.aiohttp_client.async_get_clientsession",
+        return_value=mock_session,
+    ):
         await coordinator.forward_to_gmcmap(_valid_data())
+
+    mock_session.get.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -121,14 +124,16 @@ async def test_forward_to_gmcmap_retries_on_failure():
     mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
     mock_resp.__aexit__ = AsyncMock(return_value=False)
 
-    mock_session = AsyncMock()
+    mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "homeassistant.helpers.aiohttp_client.async_get_clientsession",
+        return_value=mock_session,
+    ):
         with patch("asyncio.sleep", new_callable=AsyncMock):
             await coordinator.forward_to_gmcmap(_valid_data())
+
     assert mock_session.get.call_count == 3
 
 
@@ -241,10 +246,11 @@ async def test_forward_to_gmcmap_retries_on_client_error():
 
     mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_get_cm)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("aiohttp.ClientSession", return_value=mock_session):
+    with patch(
+        "homeassistant.helpers.aiohttp_client.async_get_clientsession",
+        return_value=mock_session,
+    ):
         with patch("asyncio.sleep", new_callable=AsyncMock):
             await coordinator.forward_to_gmcmap(_valid_data())
 

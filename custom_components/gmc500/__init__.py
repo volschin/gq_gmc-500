@@ -41,7 +41,7 @@ else:
 
 async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
     """Set up GMC-500 from a config entry."""
-    coordinator = GMCCoordinator(hass)
+    coordinator = GMCCoordinator(hass, entry)
     port = entry.options.get(CONF_PORT, entry.data.get(CONF_PORT, DEFAULT_PORT))
 
     # Restore registered devices from config entry data
@@ -97,10 +97,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.async_on_unload(
-        entry.add_update_listener(_async_update_listener)
-    )
-
     return True
 
 
@@ -129,8 +125,3 @@ async def async_remove_config_entry_device(
     return True
 
 
-async def _async_update_listener(
-    hass: HomeAssistant, entry: GMCConfigEntry
-) -> None:
-    """Handle options update — restart integration."""
-    await hass.config_entries.async_reload(entry.entry_id)

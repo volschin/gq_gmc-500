@@ -8,7 +8,7 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.core import callback
 
 from .const import DOMAIN, DEFAULT_PORT, CONF_PORT
@@ -103,7 +103,7 @@ class GMC500ConfigFlow(ConfigFlow, domain=DOMAIN):
         return GMC500OptionsFlow()
 
 
-class GMC500OptionsFlow(OptionsFlow):
+class GMC500OptionsFlow(OptionsFlowWithReload):
     """Handle options flow for GMC-500."""
 
     async def async_step_init(

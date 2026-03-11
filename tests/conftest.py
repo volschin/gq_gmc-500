@@ -62,12 +62,15 @@ class _MockOptionsFlow:
 
 _ha_config_entries.ConfigFlow = _MockConfigFlow
 _ha_config_entries.OptionsFlow = _MockOptionsFlow
+_ha_config_entries.OptionsFlowWithReload = _MockOptionsFlow
 _ha_config_entries.ConfigFlowResult = dict
 _ha_config_entries.ConfigEntry = MagicMock
 
 _ha_const = MagicMock()
 _ha_const.Platform = MagicMock()
 _ha_const.Platform.SENSOR = "sensor"
+_ha_const.EntityCategory = MagicMock()
+_ha_const.EntityCategory.DIAGNOSTIC = "diagnostic"
 
 _ha_core = MagicMock()
 _ha_core.callback = lambda f: f  # passthrough decorator
@@ -121,8 +124,10 @@ sys.modules.setdefault("homeassistant.helpers.entity", _ha_entity)
 sys.modules.setdefault("homeassistant.helpers.entity_platform", MagicMock())
 _ha_device_registry = MagicMock()
 _ha_device_registry.DeviceEntry = MagicMock
+_ha_device_registry.DeviceInfo = dict
 
 sys.modules.setdefault("homeassistant.helpers.device_registry", _ha_device_registry)
+sys.modules.setdefault("homeassistant.helpers.aiohttp_client", MagicMock())
 sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 sys.modules.setdefault("homeassistant.components", MagicMock())
 sys.modules.setdefault("homeassistant.components.sensor", _ha_sensor)
