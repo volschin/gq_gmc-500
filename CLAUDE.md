@@ -9,6 +9,9 @@ Home Assistant custom integration for the GQ Electronics GMC-500 Geiger counter.
 ## Build & Test Commands
 
 ```bash
+# Syntax check (pre-test validation)
+.venv/bin/python -m py_compile custom_components/gmc500/*.py
+
 # Run all tests
 .venv/bin/pytest tests/ -v
 
@@ -46,6 +49,7 @@ The device always gets an immediate response. gmcmap.com forwarding is fire-and-
 - **`sensor.py`** — `SensorEntity` subclasses for radiation (CPM, ACPM, µSv/h) and environment (temperature, humidity, pressure) data. Entities are created dynamically when a registered device first sends data.
 - **`config_flow.py`** — Config Flow for port setup. Device discovery flow triggered when unknown AID/GID arrives — user confirms or ignores. Options flow for port changes.
 - **`__init__.py`** — Integration lifecycle: starts/stops HTTP server, wires data callback to coordinator, triggers discovery flows for unknown devices.
+- **`diagnostics.py`** — Exports device state (coordinator data, sensor states) for Home Assistant diagnostics download.
 
 ### GMC-500 Protocol
 
