@@ -71,7 +71,7 @@ All protocol constants, parameter names, and configuration keys are in `const.py
 | Release Drafter | `.github/workflows/release.yml` | push → main |
 | Renovate | `.github/renovate.json5` | scheduled by GitHub App |
 
-Test matrix: Python 3.11, 3.12, 3.13. Coverage gate: 80%. Linting: ruff.
+Test matrix: Python 3.11, 3.12, 3.13, 3.14. Coverage gate: 80%. Linting: ruff.
 
 ## Brand Icons
 
