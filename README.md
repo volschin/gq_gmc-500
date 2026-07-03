@@ -34,14 +34,22 @@ Direct integration of the [GQ Electronics GMC-500](https://www.gqelectronicsllc.
 
 ## ⚙️ Setup
 
-### 1 — Configure the device
+### 1 — Set up a proxy
+
+The GMC-500 does not accept setting ports. You will need a proxy outside of Home Assistant that accepts port 80 and forwards it to the port you set when adding the integration. One good option is [Nginx Proxy Manager (NPM)](https://github.com/NginxProxyManager/nginx-proxy-manager) using its stream forwarding option.
+
+This proxy needs to run on a separate IP from Home Assistant — Home Assistant usually locks out port 80 for its own setup welcome screen but doesn't release it. To check: visit your HA server without port 8123 (e.g. `http://192.168.1.10`); if it shows something like `404: Not Found`, port 80 is locked out and you need the proxy.
+
+If port 80 is free on your HA instance, you can skip the proxy and point the device straight at Home Assistant.
+
+### 2 — Configure the device
 
 On the GMC-500, go to **Menu → WiFi → Server**:
-- **Server**: your HA instance IP (e.g. `192.168.1.10`), take care, the GMC is snippy regarding the server - ha and ha.local fails for me.
-- **URL**: the GMC-500 is missing a `:` as selectable char for ports other than 80, so you need to integrate it in a proxy running at port 80 with a prefix (e.g. `gmc500/log2.asp`)
+- **Server**: your proxy IP, or your HA instance IP if port 80 is free (e.g. `192.168.1.10`); take care, the GMC is snippy regarding the server — `ha` and `ha.local` fail for me.
+- **URL**: `/log2.asp` if talking directly to Home Assistant, or whatever prefix your proxy expects (e.g. `gmc500/log2.asp`)
 - Enable the WiFi
 
-### 2 — Add the integration
+### 3 — Add the integration
 
 1. **Settings → Devices & Services → Add Integration** → search **GQ GMC-500**
 2. Enter the HTTP port to listen on (default `8080`, range 1024–65535)
