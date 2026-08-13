@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiohttp import web
 
 from .const import (
-    PARAM_AID,
-    PARAM_GID,
-    PARAM_CPM,
+    OPTIONAL_PARAMS,
     PARAM_ACPM,
+    PARAM_AID,
+    PARAM_CPM,
+    PARAM_GID,
     PARAM_USV,
     REQUIRED_PARAMS,
-    OPTIONAL_PARAMS,
 )
 
 _LOGGER = logging.getLogger(__name__)

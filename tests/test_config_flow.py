@@ -70,13 +70,14 @@ sys.modules.setdefault("homeassistant.core", _ha_core)
 from custom_components.gmc500.config_flow import (  # noqa: E402
     GMC500ConfigFlow,
     GMC500OptionsFlow,
+)
+from custom_components.gmc500.config_flow import (  # noqa: E402
     test_port_available as check_port_available,
 )
 from custom_components.gmc500.const import (  # noqa: E402
     CONF_PORT,
     DEFAULT_PORT,
 )
-
 
 # ---------------------------------------------------------------------------
 # Tests: test_port_available

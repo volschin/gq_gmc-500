@@ -46,17 +46,16 @@ sys.modules.setdefault("homeassistant.helpers", MagicMock())
 sys.modules.setdefault("homeassistant.helpers.entity", _ha_entity)
 sys.modules.setdefault("homeassistant.helpers.entity_platform", _ha_entity_platform)
 
+from custom_components.gmc500.const import DOMAIN  # noqa: E402
+from custom_components.gmc500.coordinator import GMCCoordinator  # noqa: E402
 from custom_components.gmc500.sensor import (  # noqa: E402
+    ENVIRONMENT_SENSORS,
+    RADIATION_SENSORS,
+    SENSOR_DESCRIPTIONS,
     GMCEnvironmentSensor,
     GMCRadiationSensor,
-    SENSOR_DESCRIPTIONS,
-    RADIATION_SENSORS,
-    ENVIRONMENT_SENSORS,
     async_setup_entry,
 )
-from custom_components.gmc500.coordinator import GMCCoordinator  # noqa: E402
-from custom_components.gmc500.const import DOMAIN  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Helpers
