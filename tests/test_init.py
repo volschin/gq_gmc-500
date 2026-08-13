@@ -48,9 +48,9 @@ sys.modules.setdefault("homeassistant.helpers.device_registry", _ha_device_regis
 sys.modules.setdefault("homeassistant.helpers.issue_registry", _ha_issue_registry)
 
 from custom_components.gmc500 import (  # noqa: E402
+    async_remove_config_entry_device,
     async_setup_entry,
     async_unload_entry,
-    async_remove_config_entry_device,
 )
 
 # ---------------------------------------------------------------------------
@@ -322,6 +322,7 @@ class TestSetupFailure:
     async def test_creates_repair_issue_when_server_fails(self):
         """Setup creates a repair issue when server cannot bind."""
         import sys
+        ConfigEntryNotReady = sys.modules["homeassistant.exceptions"].ConfigEntryNotReady
         ir = sys.modules["homeassistant.helpers.issue_registry"]
         ir.async_create_issue.reset_mock()
 
@@ -334,10 +335,8 @@ class TestSetupFailure:
             mock_server.start.side_effect = OSError("Address already in use")
             mock_server_cls.return_value = mock_server
 
-            try:
+            with pytest.raises(ConfigEntryNotReady):
                 await async_setup_entry(hass, entry)
-            except Exception:
-                pass
 
         ir.async_create_issue.assert_called_once()
 
@@ -417,5 +416,4 @@ class TestRemoveDevice:
         result = await async_remove_config_entry_device(hass, entry, device_entry)
 
         assert result is True
-
 

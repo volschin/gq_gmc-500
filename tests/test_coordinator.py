@@ -1,12 +1,13 @@
 """Tests for the GMC-500 coordinator."""
 
 import logging
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.gmc500.coordinator import GMCCoordinator
+import pytest
+
 from custom_components.gmc500.const import AVAILABILITY_TIMEOUT
+from custom_components.gmc500.coordinator import GMCCoordinator
 
 
 def _make_mock_hass():
@@ -130,9 +131,8 @@ async def test_forward_to_gmcmap_retries_on_failure():
     with patch(
         "homeassistant.helpers.aiohttp_client.async_get_clientsession",
         return_value=mock_session,
-    ):
-        with patch("asyncio.sleep", new_callable=AsyncMock):
-            await coordinator.forward_to_gmcmap(_valid_data())
+    ), patch("asyncio.sleep", new_callable=AsyncMock):
+        await coordinator.forward_to_gmcmap(_valid_data())
 
     assert mock_session.get.call_count == 3
 
@@ -250,9 +250,8 @@ async def test_forward_to_gmcmap_retries_on_client_error():
     with patch(
         "homeassistant.helpers.aiohttp_client.async_get_clientsession",
         return_value=mock_session,
-    ):
-        with patch("asyncio.sleep", new_callable=AsyncMock):
-            await coordinator.forward_to_gmcmap(_valid_data())
+    ), patch("asyncio.sleep", new_callable=AsyncMock):
+        await coordinator.forward_to_gmcmap(_valid_data())
 
     # Should have tried GMCMAP_MAX_RETRIES (3) times
     from custom_components.gmc500.const import GMCMAP_MAX_RETRIES

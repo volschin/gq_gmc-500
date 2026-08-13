@@ -16,7 +16,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 
-from .const import DOMAIN, CONF_PORT, DEFAULT_PORT
+from .const import CONF_PORT, DEFAULT_PORT, DOMAIN
 from .coordinator import GMCCoordinator
 from .server import GMCServer
 

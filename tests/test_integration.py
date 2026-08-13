@@ -1,13 +1,13 @@
 """Integration tests for the full GMC-500 data flow."""
 
 import socket
-
-import pytest
-import aiohttp
 from unittest.mock import MagicMock
 
-from custom_components.gmc500.server import GMCServer
+import aiohttp
+import pytest
+
 from custom_components.gmc500.coordinator import GMCCoordinator
+from custom_components.gmc500.server import GMCServer
 
 
 @pytest.fixture
@@ -44,21 +44,20 @@ async def test_full_flow_server_to_coordinator(unused_tcp_port):
     await server.start()
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"http://127.0.0.1:{unused_tcp_port}/log2.asp",
-                params={
-                    "AID": "0230111",
-                    "GID": "0034021",
-                    "CPM": "42",
-                    "ACPM": "38.5",
-                    "uSV": "0.285",
-                    "tmp": "21.3",
-                },
-            ) as resp:
-                assert resp.status == 200
-                text = await resp.text()
-                assert text == "OK.ERR0"
+        async with aiohttp.ClientSession() as session, session.get(
+            f"http://127.0.0.1:{unused_tcp_port}/log2.asp",
+            params={
+                "AID": "0230111",
+                "GID": "0034021",
+                "CPM": "42",
+                "ACPM": "38.5",
+                "uSV": "0.285",
+                "tmp": "21.3",
+            },
+        ) as resp:
+            assert resp.status == 200
+            text = await resp.text()
+            assert text == "OK.ERR0"
 
         assert len(updates) == 1
         device_id, data = updates[0]

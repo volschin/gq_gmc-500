@@ -1,7 +1,7 @@
 """Tests for GMC-500 diagnostics."""
 
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,8 +9,10 @@ import pytest
 # Re-use mocks already registered via conftest.py
 sys.modules.setdefault("homeassistant.components.diagnostics", MagicMock())
 
-from custom_components.gmc500.diagnostics import async_get_config_entry_diagnostics  # noqa: E402
 from custom_components.gmc500.coordinator import GMCCoordinator  # noqa: E402
+from custom_components.gmc500.diagnostics import (  # noqa: E402
+    async_get_config_entry_diagnostics,
+)
 
 
 def _make_coordinator_with_data():
@@ -19,7 +21,7 @@ def _make_coordinator_with_data():
     coordinator.register_device("AID1", "GID1", "My Counter")
     coordinator.devices["AID1_GID1"] = {
         "AID": "AID1", "GID": "GID1", "CPM": 15.0,
-        "last_seen": datetime(2026, 3, 9, 10, 0, 0),
+        "last_seen": datetime(2026, 3, 9, 10, 0, 0, tzinfo=UTC),
     }
     return coordinator
 
