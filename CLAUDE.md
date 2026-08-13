@@ -1,84 +1,32 @@
-# CLAUDE.md
+# gq_gmc-500 repository notes
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Home Assistant custom integration receiving local GMC-500 Wi-Fi pushes and
+forwarding them asynchronously to gmcmap.com.
 
-## Project Overview
-
-Home Assistant custom integration for the GQ Electronics GMC-500 Geiger counter. Receives radiation data directly via WiFi (local push, no cloud dependency) and forwards to gmcmap.com asynchronously.
-
-## Build & Test Commands
+## Commands
 
 ```bash
-# Syntax check (pre-test validation)
 .venv/bin/python -m py_compile custom_components/gmc500/*.py
-
-# Run all tests
-.venv/bin/pytest tests/ -v
-
-# Run a single test file
-.venv/bin/pytest tests/test_server.py -v
-
-# Run a specific test
-.venv/bin/pytest tests/test_server.py::test_server_responds_ok -v
-
-# Lint
 .venv/bin/ruff check custom_components/ tests/
-
-# Run tests with coverage report
+.venv/bin/pytest tests/ -v
 .venv/bin/pytest --cov=custom_components.gmc500 --cov-report=term-missing -v
 ```
 
-No build step required — this is a Python custom component installed directly into Home Assistant.
+Home Assistant is mocked through `tests/conftest.py`; do not require a live HA
+instance or install HA merely for these tests. CI's coverage floor is 80%.
 
-## Architecture
+## Invariants
 
-### Data Flow
+- The device calls `/log2.asp` with required `AID`, `GID`, `CPM`, `ACPM`, `uSV`
+  and optional `tmp`, `hmdt`, `ap`; respond immediately with `OK.ERR0`.
+- Device identity is `{AID}_{GID}`. Unknown devices enter the discovery flow;
+  ignored identities stay ignored.
+- gmcmap forwarding must never delay the device response. Keep it in a background
+  task with bounded retries.
+- Entities are created only after a registered device first supplies data, and
+  availability expires after the configured timeout.
+- Keep protocol/config keys in `const.py` and preserve cleanup of the aiohttp
+  server and background tasks on unload/reload.
 
-```
-GMC-500 → GET /log2.asp → server.py → coordinator.py → sensor.py (HA Entities)
-                              ↓                ↓
-                         "OK.ERR0"        async → gmcmap.com (retry 3x)
-```
-
-The device always gets an immediate response. gmcmap.com forwarding is fire-and-retry in a background task.
-
-### Key Modules
-
-- **`server.py`** — Standalone `aiohttp` HTTP server on configurable port. Parses `log2.asp` GET requests with parameters AID, GID, CPM, ACPM, uSV (required) and tmp, hmdt, ap (optional). Calls a data callback.
-- **`coordinator.py`** — Device state management keyed by `{AID}_{GID}`. Handles device registration, ignore lists, availability tracking (15min timeout), listener notifications, and gmcmap.com forwarding with 3x exponential backoff retry.
-- **`sensor.py`** — `SensorEntity` subclasses for radiation (CPM, ACPM, µSv/h) and environment (temperature, humidity, pressure) data. Entities are created dynamically when a registered device first sends data.
-- **`config_flow.py`** — Config Flow for port setup. Device discovery flow triggered when unknown AID/GID arrives — user confirms or ignores. Options flow for port changes.
-- **`__init__.py`** — Integration lifecycle: starts/stops HTTP server, wires data callback to coordinator, triggers discovery flows for unknown devices.
-- **`diagnostics.py`** — Exports device state (coordinator data, sensor states) for Home Assistant diagnostics download.
-
-### GMC-500 Protocol
-
-The device sends HTTP GET to `/log2.asp?AID=<id>&GID=<id>&CPM=<n>&ACPM=<n>&uSV=<n>`. Server must respond with `OK.ERR0`. No authentication, no handshake.
-
-## Testing Approach
-
-homeassistant is **not installed** in the dev environment. All HA modules are mocked via `sys.modules` in `tests/conftest.py`. Tests for server.py and coordinator.py use real aiohttp and asyncio. Tests for sensor.py, config_flow.py, and __init__.py mock HA base classes.
-
-Key fixture: `unused_tcp_port` (in conftest.py) provides a free port for server tests.
-
-## Constants
-
-All protocol constants, parameter names, and configuration keys are in `const.py`. Domain is `gmc500`.
-
-## CI / GitHub Workflows
-
-| Workflow | File | Trigger |
-|----------|------|---------|
-| Test & Lint | `.github/workflows/test.yml` | push/PR → main |
-| HACS Validation | `.github/workflows/hacs.yml` | push/PR → main |
-| Hassfest | `.github/workflows/hassfest.yml` | push/PR → main |
-| Release Drafter | `.github/workflows/release.yml` | push → main |
-| Renovate | `.github/renovate.json5` | scheduled by GitHub App |
-
-Test matrix: Python 3.11, 3.12, 3.13, 3.14. Coverage gate: 80%. Linting: ruff.
-
-## Brand Icons
-
-Icons live in `custom_components/gmc500/brand/`:
-- `icon.png` — square icon shown in HACS and integrations list
-- `logo.png` — wider logo for the integration detail page
+When entity metadata, config flow or diagnostics change, keep translations,
+manifest, HACS/hassfest metadata and tests aligned.
